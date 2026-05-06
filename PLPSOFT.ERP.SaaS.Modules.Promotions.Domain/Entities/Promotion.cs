@@ -25,8 +25,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
         public string? ExtraData { get; set; }
 
         // Navigation properties (Quan hệ giữa các bảng)
-        //Thành viên A(Domain): Tiếp tục tạo Class PromotionRule.cs và PromotionProduct.cs trong tầng Domain. Sau khi tạo xong thì mở comment dòng bên dưới ra thì hết lỗi =)))))
 
-        //public virtual ICollection<PromotionRule> PromotionRules { get; set; } = new List<PromotionRule>();
+        public virtual ICollection<PromotionRule> PromotionRules { get; set; } = new List<PromotionRule>();
     }
 }

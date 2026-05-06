@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PLPSOFT.ERP.SaaS.Modules.Promotions.Domain\PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Application/PLPSOFT.ERP.SaaS.Modules.Promotions.Application.csproj" />
+  <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Domain/PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.csproj" />
+  <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure/PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.csproj" />
   <Project Path="PLPSOFT.ERP.SaaS.Web/PLPSOFT.ERP.SaaS.Web.csproj" />
 </Solution>

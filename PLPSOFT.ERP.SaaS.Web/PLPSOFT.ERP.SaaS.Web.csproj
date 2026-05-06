@@ -6,4 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Areas\Promotions\Controllers\" />
+    <Folder Include="Areas\Promotions\Views\Campaigns\" />
+  </ItemGroup>
+
 </Project>

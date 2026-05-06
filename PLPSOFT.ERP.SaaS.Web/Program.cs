@@ -1,4 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.Persistence;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<PromotionDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

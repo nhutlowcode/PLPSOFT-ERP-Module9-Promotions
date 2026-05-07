@@ -1,22 +1,38 @@
-﻿namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-public class PromotionProduct
+namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
 {
-    public long PromotionProductId { get; set; }
+    [Table("PromotionProducts", Schema = "promotions")]
+    public class PromotionProduct
+    {
+        [Key]
+        [Column("PromotionProductID")]
+        public long PromotionProductId { get; set; }
 
-    public long PromotionId { get; set; }
+        [Required]
+        [Column("PromotionID")]
+        public long PromotionId { get; set; }
 
-    public long ProductId { get; set; }
+        [Required]
+        [Column("ProductID")]
+        public long ProductId { get; set; }
 
-    public decimal? RequiredQuantity { get; set; }
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal? RequiredQuantity { get; set; }
 
-    public decimal? FreeQuantity { get; set; }
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal? FreeQuantity { get; set; }
 
-    public bool IsGiftProduct { get; set; }
+        [Required]
+        public bool IsGiftProduct { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+        [Required]
+        public DateTime CreatedAt { get; set; }
 
-    // Navigation Properties
-
-    public Promotion Promotion { get; set; } = null!;
+        // Navigation Properties
+        [ForeignKey("PromotionId")]
+        public virtual Promotion Promotion { get; set; } = null!;
+    }
 }

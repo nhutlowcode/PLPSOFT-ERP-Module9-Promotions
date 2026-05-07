@@ -1,26 +1,52 @@
-﻿namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-public class PromotionRule
+namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
 {
-    public long RuleId { get; set; }
+    [Table("PromotionRules", Schema = "promotions")]
+    public class PromotionRule
+    {
+        [Key]
+        [Column("RuleID")]
+        public long RuleId { get; set; }
 
-    public long PromotionId { get; set; }
+        [Required]
+        [Column("PromotionID")]
+        public long PromotionId { get; set; }
 
-    public long RuleTypeId { get; set; }
+        [Required]
+        [Column("RuleTypeID")]
+        public long RuleTypeId { get; set; }
 
-    public decimal? MinOrderAmount { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? MinOrderAmount { get; set; }
 
-    public decimal? MinQuantity { get; set; }
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal? MinQuantity { get; set; }
 
-    public long DiscountTypeId { get; set; }
+        [Column("CustomerGroupID")]
+        public long? CustomerGroupId { get; set; }
 
-    public decimal DiscountValue { get; set; }
+        [Column("CategoryID")]
+        public long? CategoryId { get; set; }
 
-    public decimal? MaxDiscountAmount { get; set; }
+        [Required]
+        [Column("DiscountTypeID")]
+        public long DiscountTypeId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+        [Required]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal DiscountValue { get; set; }
 
-    // Navigation Properties
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? MaxDiscountAmount { get; set; }
 
-    public Promotion Promotion { get; set; } = null!;
+        [Required]
+        public DateTime CreatedAt { get; set; }
+
+        // Navigation Properties
+        [ForeignKey("PromotionId")]
+        public virtual Promotion Promotion { get; set; } = null!;
+    }
 }

@@ -1,18 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Areas\Promotions\Controllers\" />
-    <Folder Include="Areas\Promotions\Views\Campaigns\" />
   </ItemGroup>
 
 </Project>

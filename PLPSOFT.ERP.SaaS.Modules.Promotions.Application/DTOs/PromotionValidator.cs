@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
 {
@@ -48,6 +50,18 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
         {
             if (!rule.CustomerGroupID.HasValue) return true;
             return rule.CustomerGroupID == cartCustomerGroupID;
+        }
+
+        /// <summary>
+        /// Kiểm tra KM có áp dụng cho danh mục sản phẩm trong giỏ không.
+        /// Nếu CategoryID null → true (không giới hạn danh mục).
+        /// Nếu giỏ không có CategoryID nào → false (vì rule yêu cầu danh mục cụ thể).
+        /// </summary>
+        public static bool IsValidCategory(PromotionRuleDto rule, List<long?> cartCategoryIDs)
+        {
+            if (!rule.CategoryID.HasValue) return true;
+            if (!cartCategoryIDs.Any()) return false;
+            return cartCategoryIDs.Contains(rule.CategoryID.Value);
         }
     }
 }

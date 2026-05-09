@@ -43,16 +43,16 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
         public int? MaxUsage { get; set; }
 
         [Required]
-        public int CurrentUsage { get; set; }
+        public int CurrentUsage { get; set; } = 0;
 
         [Required]
-        public int Priority { get; set; }
+        public int Priority { get; set; } = 0;
 
         [Required]
-        public bool IsStackable { get; set; }
+        public bool IsStackable { get; set; } = false;
 
         [Required]
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
         [Column("CreatedByUserID")]
@@ -64,9 +64,10 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
         [MaxLength(500)]
         public string? Note { get; set; }
 
-        // Navigation properties (Quan hệ 1-N)
+        // ═══════════════════════════════════════════════
+        // Navigation Properties
+        // ═══════════════════════════════════════════════
         public virtual ICollection<PromotionRule> PromotionRules { get; set; } = new List<PromotionRule>();
-
         public virtual ICollection<PromotionProduct> PromotionProducts { get; set; } = new List<PromotionProduct>();
     }
 }

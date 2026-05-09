@@ -26,12 +26,14 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
         public decimal? FreeQuantity { get; set; }
 
         [Required]
-        public bool IsGiftProduct { get; set; }
+        public bool IsGiftProduct { get; set; } = false;
 
         [Required]
         public DateTime CreatedAt { get; set; }
 
+        // ═══════════════════════════════════════════════
         // Navigation Properties
+        // ═══════════════════════════════════════════════
         [ForeignKey("PromotionId")]
         public virtual Promotion Promotion { get; set; } = null!;
     }

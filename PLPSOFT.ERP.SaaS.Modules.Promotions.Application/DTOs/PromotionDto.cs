@@ -9,6 +9,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
     public class PromotionDto
     {
         public long PromotionID { get; set; }
+        public long? BranchId { get; set; }
         public string PromotionCode { get; set; } = string.Empty;
         public string PromotionName { get; set; } = string.Empty;
         public string PromotionType { get; set; } = string.Empty;   // DISCOUNT / BOGO

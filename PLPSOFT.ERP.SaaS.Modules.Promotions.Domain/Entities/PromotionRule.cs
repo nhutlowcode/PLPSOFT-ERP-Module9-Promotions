@@ -26,7 +26,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.Entities
         public decimal? MinQuantity { get; set; }
 
         [Column("CustomerGroupID")]
-        public long? CustomerGroupId { get; set; }
+        public long? CustomerGroupId { get; set; } = default(long?);
 
         [Column("CategoryID")]
         public long? CategoryId { get; set; }

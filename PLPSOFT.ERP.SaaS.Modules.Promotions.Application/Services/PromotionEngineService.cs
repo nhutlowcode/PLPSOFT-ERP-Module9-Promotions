@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Interfaces;
+using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services;
 
 namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 {
@@ -215,7 +216,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
             {
                 foreach (var bogo in bogoPromotions)
                 {
-                    var gifts = ProcessBOGO(bogo, request.Items);
+                    var gifts = BuyXGetYHandler.Process(bogo, request.Items);
                     result.GiftItems.AddRange(gifts);
 
                     _logger.LogInformation(
@@ -235,7 +236,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 
             return result;
         }
-
+        /*
         /// <summary>
         /// Xử lý BOGO: Lấy hàng tặng dựa trên Products của KM.
         /// </summary>
@@ -293,7 +294,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 
             return gifts;
         }
-
+        */
         /// <summary>
         /// Ghi nhận sử dụng KM (tăng CurrentUsage).
         /// Gọi từ Module Sales sau khi Invoice confirmed.

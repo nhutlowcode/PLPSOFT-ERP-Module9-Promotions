@@ -1,4 +1,221 @@
-﻿@page
-@model PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Views.Campaigns.IndexModel
+﻿@using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
+@model List<PromotionDto>
+
 @{
+    Layout = "~/Areas/Promotions/Views/Shared/_PromotionsLayout.cshtml";
+    ViewData["Title"] = "Chương trình Khuyến mãi";
 }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1" style="font-size: 1.5rem; font-weight: 600; color: #1f3a70;">
+            <i class="ti ti-discount2 text-primary me-2"></i>Chương trình Khuyến mãi
+        </h1>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Quản lý các chiến dịch giảm giá, tặng quà và mã khuyến mãi</p>
+    </div>
+    <a href="/Promotions/Campaigns/Create" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+        <i class="ti ti-plus"></i> Tạo chiến dịch mới
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid #0F6E56; border-radius: 8px;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Đang chạy</p>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #0F6E56;">
+                            @Model.Count(x => x.Status == "ACTIVE")
+                        </h3>
+                    </div>
+                    <div class="p-2 rounded" style="background: #E1F5EE;">
+                        <i class="ti ti-player-play fs-3" style="color: #0F6E56;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid #185FA5; border-radius: 8px;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Bản nháp</p>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #185FA5;">
+                            @Model.Count(x => x.Status == "DRAFT")
+                        </h3>
+                    </div>
+                    <div class="p-2 rounded" style="background: #E6F1FB;">
+                        <i class="ti ti-pencil fs-3" style="color: #185FA5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid #A32D2D; border-radius: 8px;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Hết hạn</p>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #A32D2D;">
+                            @Model.Count(x => x.Status == "EXPIRED")
+                        </h3>
+                    </div>
+                    <div class="p-2 rounded" style="background: #FCEBEB;">
+                        <i class="ti ti-clock-stop fs-3" style="color: #A32D2D;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid #BA7517; border-radius: 8px;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Tổng cộng</p>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #BA7517;">
+                            @Model.Count
+                        </h3>
+                    </div>
+                    <div class="p-2 rounded" style="background: #FDF3E1;">
+                        <i class="ti ti-sum fs-3" style="color: #BA7517;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background: #f4f6f9; border-bottom: 2px solid #e9ecef;">
+                    <tr>
+                        <th class="py-3 px-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase;">Mã KM</th>
+                        <th class="py-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase;">Tên chương trình</th>
+                        <th class="py-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase;">Loại</th>
+                        <th class="py-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase;">Thời gian</th>
+                        <th class="py-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase;">Trạng thái</th>
+                        <th class="py-3" style="font-size: 12px; font-weight: 600; color: #495057; text-transform: uppercase; text-align: right; padding-right: 1.5rem;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    @foreach (var promo in Model)
+                    {
+                        <tr style="transition: all 0.2s ease;">
+                            <td class="px-3">
+                                <span class="badge bg-light text-dark border border-secondary font-monospace">@promo.PromotionCode</span>
+                            </td>
+                            <td>
+                                <span class="fw-medium text-dark">@promo.PromotionName</span>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    @(promo.BranchId.HasValue ? $"Chi nhánh #{promo.BranchId}" : "Áp dụng toàn công ty")
+                                </div>
+                            </td>
+                            <td>
+                                @if (promo.PromotionType == "DISCOUNT_PERCENT" || promo.PromotionType == "DISCOUNT_AMOUNT" || promo.PromotionType == "DISCOUNT")
+                                {
+                                    <span class="badge rounded-pill" style="background: #E6F1FB; color: #185FA5; font-weight: 500;">
+                                        <i class="ti ti-tags me-1"></i>Giảm giá
+                                    </span>
+                                }
+                                else if (promo.PromotionType == "BUY_X_GET_Y" || promo.PromotionType == "BOGO")
+                                {
+                                    <span class="badge rounded-pill" style="background: #EEEDFE; color: #534AB7; font-weight: 500;">
+                                        <i class="ti ti-gift me-1"></i>Mua X Tặng Y
+                                    </span>
+                                }
+                            </td>
+                            <td style="font-size: 13px; color: #495057;">
+                                <div><i class="ti ti-calendar text-muted me-1"></i> @promo.StartDate.ToString("dd/MM/yyyy")</div>
+                                @if (promo.EndDate.HasValue)
+                                {
+                                    <div><i class="ti ti-arrow-down-right text-muted me-1"></i> @promo.EndDate.Value.ToString("dd/MM/yyyy")</div>
+                                }
+                                else
+                                {
+                                    <div class="text-success"><i class="ti ti-infinity me-1"></i> Không thời hạn</div>
+                                }
+                            </td>
+                            <td>
+                                @if (promo.Status == "ACTIVE")
+                                {
+                                    <span class="badge rounded-pill" style="background: #E1F5EE; color: #0F6E56; font-weight: 500; border: 1px solid #c3e6cb;">
+                                        <span class="d-inline-block rounded-circle me-1" style="width: 6px; height: 6px; background-color: #0F6E56;"></span>Đang chạy
+                                    </span>
+                                }
+                                else if (promo.Status == "DRAFT")
+                                {
+                                    <span class="badge rounded-pill" style="background: #F8F9FA; color: #495057; font-weight: 500; border: 1px solid #dee2e6;">
+                                        <span class="d-inline-block rounded-circle me-1" style="width: 6px; height: 6px; background-color: #6c757d;"></span>Bản nháp
+                                    </span>
+                                }
+                                else if (promo.Status == "EXPIRED")
+                                {
+                                    <span class="badge rounded-pill" style="background: #FCEBEB; color: #A32D2D; font-weight: 500; border: 1px solid #f5c6cb;">
+                                        <span class="d-inline-block rounded-circle me-1" style="width: 6px; height: 6px; background-color: #A32D2D;"></span>Hết hạn
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a asp-action="Edit" asp-route-id="@promo.PromotionID" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" title="@(promo.Status == "EXPIRED" ? "Xem chi tiết" : "Chỉnh sửa")">
+                                        <i class="ti @(promo.Status == "EXPIRED" ? "ti-eye" : "ti-edit")"></i> @(promo.Status == "EXPIRED" ? "Xem" : "Sửa")
+                                    </a>
+
+                                    @if (promo.Status == "DRAFT")
+                                    {
+                                        <form asp-action="Activate" asp-route-id="@promo.PromotionID" method="post" style="display: inline-block;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
+                                                <i class="ti ti-player-play"></i> Bật
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (promo.Status == "ACTIVE")
+                                    {
+                                        <form asp-action="Deactivate" asp-route-id="@promo.PromotionID" method="post" style="display: inline-block;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1">
+                                                <i class="ti ti-player-pause"></i> Tắt
+                                            </button>
+                                        </form>
+                                    }
+
+                                    <form asp-action="Delete" asp-route-id="@promo.PromotionID" method="post" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này? Hành động này không thể hoàn tác!')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                                            <i class="ti ti-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="ti ti-discount-off text-muted opacity-25" style="font-size: 4rem;"></i>
+            </div>
+            <h5 class="text-dark fw-medium">Chưa có chương trình khuyến mãi nào</h5>
+            <p class="text-muted mb-4">Bạn có thể bắt đầu tạo chiến dịch giảm giá hoặc mua X tặng Y ngay bây giờ.</p>
+            <a href="/Promotions/Campaigns/Create" class="btn btn-primary shadow-sm">
+                <i class="ti ti-plus me-1"></i> Tạo khuyến mãi đầu tiên
+            </a>
+        </div>
+    }
+</div>

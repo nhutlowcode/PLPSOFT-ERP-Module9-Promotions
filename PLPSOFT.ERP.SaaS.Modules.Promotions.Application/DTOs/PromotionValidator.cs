@@ -16,7 +16,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
 
             var now = DateTime.Now;
             if (now < promo.StartDate) return false;
-            if (promo.EndDate.HasValue && now > promo.EndDate.Value) return false;
+            if (promo.EndDate.HasValue && now.Date > promo.EndDate.Value.Date) return false;
             if (promo.MaxUsage.HasValue && promo.CurrentUsage >= promo.MaxUsage) return false;
 
             return true;

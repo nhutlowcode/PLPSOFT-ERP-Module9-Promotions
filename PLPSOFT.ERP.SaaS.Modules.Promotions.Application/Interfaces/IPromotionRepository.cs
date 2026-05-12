@@ -1,69 +1,125 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs;
+
 
 namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Interfaces
 {
     /// <summary>
-    /// Hợp đồng truy vấn DB cho module Promotions.
-    /// Application/Engine chỉ gọi qua interface này — không biết DB là gì.
-    /// Minh Nhựt (Engine) sẽ inject interface này để dùng.
+    /// Interface Repository cho Promotion.
+    /// Xử lý tất cả truy vấn database.
     /// </summary>
     public interface IPromotionRepository
     {
-        // ─── ĐỌC DỮ LIỆU ────────────────────────────────────────────
+        /// <summary>
+        /// Lấy tất cả KM của một Company (không lọc status).
+        /// Include: Rules, Products.
+        /// Dùng để quản lý backend (xem toàn bộ).
+        /// </summary>
+        /// <param name="companyID">ID công ty</param>
+        /// <returns>Danh sách toàn bộ KM</returns>
+        Task<List<PromotionDto>> GetAllByCompanyAsync(long companyID);
 
         /// <summary>
-        /// Lấy toàn bộ KM đang ACTIVE của 1 công ty (kèm Rules và Products).
-        /// Engine dùng để lọc KM phù hợp với giỏ hàng.
+        /// Lấy KM ACTIVE (còn hiệu lực) cho một Company & Branch.
+        /// Lọc: IsActive=true, Status=ACTIVE, StartDate<=now, EndDate null hoặc >=now,
+        ///      MaxUsage null hoặc CurrentUsage < MaxUsage,
+        ///      BranchID null hoặc BranchID == branchID (nếu có)
+        /// Include: Rules, Products.
+        /// Dùng cho Engine tính discount (lấy KM áp dụng được).
         /// </summary>
-        Task<List<PromotionDto>> GetActivePromotionsAsync(long companyID);
+        /// <param name="companyID">ID công ty</param>
+        /// <param name="branchID">ID chi nhánh (optional)</param>
+        /// <returns>Danh sách KM ACTIVE</returns>
+        Task<List<PromotionDto>> GetActivePromotionsAsync(long companyID, long? branchID = null);
 
         /// <summary>
-        /// Lấy tất cả KM (mọi trạng thái) để hiển thị màn hình quản lý CRUD.
-        /// Web layer (Nhựt Huỳnh) dùng hàm này.
+        /// Lấy 1 KM theo ID (KHÔNG lọc status).
+        /// Dùng để sửa KM (cần lấy được DRAFT và EXPIRED cũng được).
+        /// Include: Rules, Products.
         /// </summary>
-        Task<List<PromotionDto>> GetAllAsync(long companyID);
+        /// <param name="promotionID">ID KM</param>
+        /// <returns>KM hoặc null nếu không tìm thấy</returns>
+        Task<PromotionDto?> GetPromotionByIdAsync(long promotionID);
 
         /// <summary>
-        /// Lấy 1 KM theo ID (kèm Rules và Products).
+        /// Tạo mới 1 KM (insert Promotion + Rules + Products).
+        /// Trả về PromotionID vừa tạo.
         /// </summary>
-        Task<PromotionDto?> GetByIdAsync(long promotionID);
+        /// <param name="dto">Dữ liệu KM từ form</param>
+        /// <returns>ID KM vừa tạo</returns>
+        Task<long> CreatePromotionAsync(PromotionDto dto);
 
         /// <summary>
-        /// Lấy 1 KM theo mã code trong cùng công ty.
+        /// Cập nhật KM (update + xóa Rules/Products cũ → insert lại).
+        /// Không được cập nhật: CompanyID, CreatedByUserID, CreatedAt, IsActive (dùng UpdateStatusAsync).
         /// </summary>
-        Task<PromotionDto?> GetByCodeAsync(long companyID, string promotionCode);
+        /// <param name="dto">Dữ liệu KM sau khi edit</param>
+        Task UpdatePromotionAsync(PromotionDto dto);
 
         /// <summary>
-        /// Kiểm tra mã KM có bị trùng trong cùng công ty không.
-        /// Dùng khi tạo mới để validate trước khi lưu.
+        /// Xóa KM thật.
+        /// Điều kiện: CurrentUsage == 0 (chưa có đơn hàng nào dùng).
+        /// Nếu CurrentUsage > 0 → throw InvalidOperationException:
+        ///   "KM đã được sử dụng, không thể xóa. Hãy chuyển sang EXPIRED."
+        /// ON DELETE CASCADE tự xóa Rules và Products.
         /// </summary>
-        Task<bool> IsCodeExistsAsync(long companyID, string promotionCode);
-
-        // ─── GHI DỮ LIỆU ────────────────────────────────────────────
+        /// <param name="promotionID">ID KM cần xóa</param>
+        /// <exception cref="InvalidOperationException">Nếu KM đã được sử dụng</exception>
+        Task DeletePromotionAsync(long promotionID);
 
         /// <summary>
-        /// Tạo mới 1 chương trình KM. Trả về PromotionID vừa tạo.
+        /// Đổi trạng thái KM: DRAFT → ACTIVE → EXPIRED.
+        /// ACTIVE  → IsActive = true, Status = ACTIVE
+        /// EXPIRED → IsActive = false, Status = EXPIRED
+        /// DRAFT   → IsActive = false, Status = DRAFT (nếu cần)
         /// </summary>
-        Task<long> CreateAsync(PromotionDto dto, long companyID, long createdByUserID);
+        /// <param name="promotionID">ID KM</param>
+        /// <param name="newStatus">Trạng thái mới: "ACTIVE", "EXPIRED", "DRAFT"</param>
+        Task UpdateStatusAsync(long promotionID, string newStatus);
 
         /// <summary>
-        /// Cập nhật thông tin KM (tên, ngày, ghi chú...).
+        /// Tăng CurrentUsage lên 1 (khi đơn hàng confirm).
+        /// Dùng transaction + UPDLOCK để tránh race condition.
+        /// Nếu CurrentUsage >= MaxUsage → set IsActive=false, Status=EXPIRED.
         /// </summary>
-        Task UpdateAsync(PromotionDto dto);
+        /// <param name="promotionID">ID KM</param>
+        Task DeductPromotionUsageAsync(long promotionID);
 
         /// <summary>
-        /// Xóa mềm KM: set IsActive = false, không xóa vật lý khỏi DB.
+        /// Lấy danh sách các chi nhánh của công ty.
         /// </summary>
-        Task DeactivateAsync(long promotionID);
-
-        // ─── DÙNG CHO ENGINE (Minh Nhựt gọi) ────────────────────────
+        /// <param name="companyId">ID công ty</param>
+        /// <returns>Danh sách chi nhánh</returns>
+        Task<List<BranchDto>> GetBranchesAsync(long companyId);
 
         /// <summary>
-        /// Tăng CurrentUsage lên 1 sau khi KM được áp dụng thành công.
-        /// Dùng ExecuteUpdate để tránh race condition khi nhiều đơn cùng lúc.
+        /// Lấy danh sách các giá trị hệ thống theo typeCode.
         /// </summary>
-        Task DeductUsageAsync(long promotionID);
+        /// <param name="typeCode">Mã loại (ví dụ: "PROMOTION_TYPE")</param>
+        /// <returns>Danh sách giá trị hệ thống</returns>
+        Task<List<SystemTypeValueDto>> GetTypeValuesAsync(string typeCode);
+
+        /// <summary>
+        /// Lấy danh sách nhóm khách hàng của một công ty.
+        /// </summary>
+        /// <param name="companyId">ID công ty</param>
+        /// <returns>Danh sách nhóm khách hàng</returns>
+        Task<List<CustomerGroupDto>> GetCustomerGroupsAsync(long companyId);
+
+        /// <summary>
+        /// Lấy danh sách danh mục sản phẩm của một công ty.
+        /// </summary>
+        /// <param name="companyId">ID công ty</param>
+        /// <returns>Danh sách danh mục sản phẩm</returns>
+        Task<List<ProductCategoryDto>> GetCategoriesAsync(long companyId);
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm của một công ty.
+        /// </summary>
+        /// <param name="companyId">ID công ty</param>
+        /// <returns>Danh sách sản phẩm</returns>
+        Task<List<ProductDto>> GetProductsAsync(long companyId);
     }
 }

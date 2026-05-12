@@ -10,4 +10,8 @@
     <ProjectReference Include="..\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure\PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
 </Project>

@@ -5,14 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Interfaces;
-using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services;
 
 namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 {
-    /// <summary>
-    /// Triển khai IPromotionEngineService.
-    /// Tính toán discount tốt nhất theo thứ tự ưu tiên.
-    /// </summary>
     public class PromotionEngineService : IPromotionEngineService
     {
         private readonly IPromotionRepository _repository;
@@ -26,112 +21,67 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// BƯỚC 1: Lấy dữ liệu từ request
-        /// BƯỚC 2: Validate & tính discount từng Promotion
-        /// BƯỚC 3: Xử lý Stackable (cộng dồn) vs NonStackable (lấy max)
-        /// BƯỚC 4: Xử lý BOGO (Buy X Get Y)
-        /// BƯỚC 5: Trả về kết quả
-        /// </summary>
         public async Task<CartDiscountResult> CalculateBestDiscountAsync(CartRequest request)
         {
             var result = new CartDiscountResult();
 
-            // Kiểm tra dữ liệu input
             if (request.Items == null || !request.Items.Any())
             {
                 _logger.LogWarning("CartRequest không có Items");
                 return result;
             }
 
-            // ═══════════════════════════════════════════════════════════
             // BƯỚC 1: LẤY DỮ LIỆU
-            // ═══════════════════════════════════════════════════════════
             var promos = await _repository.GetActivePromotionsAsync(request.CompanyID);
 
-            // Lọc theo BranchID nếu có
             if (request.BranchID.HasValue)
             {
-                promos = promos
-                    .Where(p => !p.BranchId.HasValue || p.BranchId == request.BranchID.Value)
-                    .ToList();
+                promos = promos.Where(p => !p.BranchId.HasValue || p.BranchId == request.BranchID.Value).ToList();
             }
 
-            if (!promos.Any())
-            {
-                _logger.LogInformation("Không có KM nào active cho CompanyID {0}", request.CompanyID);
-                return result;
-            }
+            if (!promos.Any()) return result;
 
             var cartTotal = request.Items.Sum(i => i.LineTotal);
             var cartQty = request.Items.Sum(i => i.Quantity);
-            var cartCategoryIDs = request.Items
-                .Select(i => i.CategoryID)
-                .Distinct()
-                .ToList();
+            var cartCategoryIDs = request.Items.Select(i => i.CategoryID).Distinct().ToList();
 
-            _logger.LogInformation(
-                "Tính KM: CompanyID={0}, CartTotal={1}, CartQty={2}, Categories={3}",
-                request.CompanyID, cartTotal, cartQty, string.Join(",", cartCategoryIDs));
-
-            // ═══════════════════════════════════════════════════════════
             // BƯỚC 2: VALIDATE & TÍNH DISCOUNT TỪNG PROMOTION
-            // ═══════════════════════════════════════════════════════════
             var stackablePromotions = new List<(PromotionDto promo, decimal discount)>();
             var nonStackablePromotions = new List<(PromotionDto promo, decimal discount)>();
 
-            foreach (var promo in promos)
+            foreach (var promo in promos.Where(p => p.PromotionType != "BOGO" && p.PromotionType != "BUY_X_GET_Y"))
             {
-                // 2a. Kiểm tra KM còn hiệu lực
-                if (!PromotionValidator.IsPromotionActive(promo))
+                // Giả định PromotionValidator đã được triển khai tĩnh (Static) ở project của bạn
+                if (!PromotionValidator.IsPromotionActive(promo)) continue;
+
+                // --- FIX LỖI 1: Lọc Sản phẩm được áp dụng ---
+                // Nếu KM có danh sách sản phẩm (không phải hàng tặng), chỉ tính tiền các sản phẩm đó.
+                // Nếu rỗng (Count == 0), tức là áp dụng toàn sàn.
+                var appliedProductIds = promo.Products?.Where(p => !p.IsGiftProduct).Select(p => p.ProductID).ToList() ?? new List<long>();
+
+                decimal applicableTotal = cartTotal;
+                if (appliedProductIds.Any())
                 {
-                    _logger.LogDebug("KM {0} không active", promo.PromotionCode);
-                    continue;
+                    applicableTotal = request.Items.Where(i => appliedProductIds.Contains(i.ProductID)).Sum(i => i.LineTotal);
                 }
 
-                // Duyệt từng rule để tìm rule hợp lệ
+                // Nếu trong giỏ không có món nào thuộc danh sách áp dụng -> Bỏ qua KM này
+                if (applicableTotal <= 0 && appliedProductIds.Any()) continue;
+
                 bool ruleMatched = false;
                 decimal ruleDiscount = 0;
 
                 foreach (var rule in promo.Rules)
                 {
-                    // 2b. Kiểm tra tối thiểu đơn hàng
-                    if (!PromotionValidator.IsValidMinOrder(rule, cartTotal))
-                    {
-                        _logger.LogDebug("Rule {0} không đạt MinOrderAmount", rule.RuleID);
-                        continue;
-                    }
+                    if (!PromotionValidator.IsValidMinOrder(rule, cartTotal)) continue;
+                    if (!PromotionValidator.IsValidQuantity(rule, cartQty)) continue;
+                    if (!PromotionValidator.IsValidCustomerGroup(rule, request.CustomerGroupID)) continue;
+                    if (!PromotionValidator.IsValidCategory(rule, cartCategoryIDs)) continue;
 
-                    // 2c. Kiểm tra tối thiểu số lượng
-                    if (!PromotionValidator.IsValidQuantity(rule, cartQty))
-                    {
-                        _logger.LogDebug("Rule {0} không đạt MinQuantity", rule.RuleID);
-                        continue;
-                    }
-
-                    // 2d. Kiểm tra nhóm khách hàng
-                    if (!PromotionValidator.IsValidCustomerGroup(rule, request.CustomerGroupID))
-                    {
-                        _logger.LogDebug("Rule {0} không phù hợp CustomerGroup", rule.RuleID);
-                        continue;
-                    }
-
-                    // 2e. Kiểm tra danh mục sản phẩm
-                    if (!PromotionValidator.IsValidCategory(rule, cartCategoryIDs))
-                    {
-                        _logger.LogDebug("Rule {0} không phù hợp Category", rule.RuleID);
-                        continue;
-                    }
-
-                    // ═══════════════════════════════════════════════════════════
-                    // Tính discount
-                    // ═══════════════════════════════════════════════════════════
+                    // Tính discount trên TỔNG TIỀN ĐƯỢC ÁP DỤNG (applicableTotal)
                     if (rule.DiscountType == "PERCENT")
                     {
-                        // PERCENT: Chiết khấu phần trăm
-                        ruleDiscount = cartTotal * rule.DiscountValue / 100m;
-
-                        // Giới hạn tối đa nếu có
+                        ruleDiscount = applicableTotal * rule.DiscountValue / 100m;
                         if (rule.MaxDiscountAmount.HasValue)
                         {
                             ruleDiscount = Math.Min(ruleDiscount, rule.MaxDiscountAmount.Value);
@@ -139,172 +89,116 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
                     }
                     else if (rule.DiscountType == "AMOUNT")
                     {
-                        // AMOUNT: Chiết khấu cố định
                         ruleDiscount = rule.DiscountValue;
                     }
 
                     ruleMatched = true;
-                    _logger.LogInformation(
-                        "KM {0} - Rule {1} hợp lệ, Discount={2}",
-                        promo.PromotionCode, rule.RuleID, ruleDiscount);
-
-                    // 1 rule hợp lệ là đủ kích hoạt KM
-                    break;
+                    break; // Thỏa 1 rule là ăn tiền, thoát vòng lặp
                 }
 
-                if (!ruleMatched || ruleDiscount <= 0)
-                {
-                    _logger.LogDebug("KM {0} không có rule hợp lệ", promo.PromotionCode);
-                    continue;
-                }
+                if (!ruleMatched || ruleDiscount <= 0) continue;
 
-                // Thêm vào danh sách stackable hoặc non-stackable
                 if (promo.IsStackable)
-                {
                     stackablePromotions.Add((promo, ruleDiscount));
-                }
                 else
-                {
                     nonStackablePromotions.Add((promo, ruleDiscount));
-                }
             }
 
-            // ═══════════════════════════════════════════════════════════
             // BƯỚC 3: XỬ LÝ STACKABLE vs NON-STACKABLE
-            // ═══════════════════════════════════════════════════════════
-
-            // Stackable: cộng dồn TẤT CẢ
             foreach (var (promo, discount) in stackablePromotions)
             {
                 result.TotalDiscount += discount;
-                result.AppliedPromotions.Add(new AppliedPromotionDto
-                {
-                    PromotionID = promo.PromotionID,
-                    PromotionName = promo.PromotionName,
-                    DiscountAmount = discount
-                });
+                result.AppliedPromotions.Add(new AppliedPromotionDto { PromotionID = promo.PromotionID, PromotionName = promo.PromotionName, DiscountAmount = discount });
             }
 
-            // Non-stackable: chỉ lấy 1 cái discount CAO NHẤT
             if (nonStackablePromotions.Any())
             {
-                var bestNonStackable = nonStackablePromotions
-                    .OrderByDescending(x => x.discount)
-                    .First();
-
+                var bestNonStackable = nonStackablePromotions.OrderByDescending(x => x.discount).First();
                 result.TotalDiscount += bestNonStackable.discount;
-                result.AppliedPromotions.Add(new AppliedPromotionDto
-                {
-                    PromotionID = bestNonStackable.promo.PromotionID,
-                    PromotionName = bestNonStackable.promo.PromotionName,
-                    DiscountAmount = bestNonStackable.discount
-                });
-
-                _logger.LogInformation(
-                    "NonStackable KM: lấy {0} với discount {1}",
-                    bestNonStackable.promo.PromotionCode, bestNonStackable.discount);
+                result.AppliedPromotions.Add(new AppliedPromotionDto { PromotionID = bestNonStackable.promo.PromotionID, PromotionName = bestNonStackable.promo.PromotionName, DiscountAmount = bestNonStackable.discount });
             }
 
-            // ═══════════════════════════════════════════════════════════
             // BƯỚC 4: XỬ LÝ BOGO (BUY X GET Y)
-            // ═══════════════════════════════════════════════════════════
-            var bogoPromotions = promos
-                .Where(p => p.PromotionType == "BOGO" && PromotionValidator.IsPromotionActive(p))
-                .ToList();
+            var bogoPromotions = promos.Where(p => (p.PromotionType == "BOGO" || p.PromotionType == "BUY_X_GET_Y") && PromotionValidator.IsPromotionActive(p)).ToList();
 
-            if (bogoPromotions.Any())
+            foreach (var bogo in bogoPromotions)
             {
-                foreach (var bogo in bogoPromotions)
+                bool isBogoConditionMatched = true;
+                if (bogo.Rules != null && bogo.Rules.Any())
                 {
-                    var gifts = BuyXGetYHandler.Process(bogo, request.Items);
-                    result.GiftItems.AddRange(gifts);
+                    var cond = bogo.Rules.First();
+                    if (!PromotionValidator.IsValidMinOrder(cond, cartTotal) ||
+                        !PromotionValidator.IsValidCustomerGroup(cond, request.CustomerGroupID))
+                    {
+                        isBogoConditionMatched = false;
+                    }
+                }
 
-                    _logger.LogInformation(
-                        "BOGO KM {0}: {1} hàng tặng",
-                        bogo.PromotionCode, gifts.Count);
+                if (isBogoConditionMatched)
+                {
+                    // GỌI SANG HANDLER Ở ĐÂY
+                    var gifts = BuyXGetYHandler.Process(bogo, request.Items);
+
+                    if (gifts.Any())
+                    {
+                        result.GiftItems.AddRange(gifts);
+                        result.AppliedPromotions.Add(new AppliedPromotionDto { PromotionID = bogo.PromotionID, PromotionName = bogo.PromotionName, DiscountAmount = 0 });
+                    }
                 }
             }
 
-            // ═══════════════════════════════════════════════════════════
             // BƯỚC 5: TRẢ VỀ KẾT QUẢ
-            // ═══════════════════════════════════════════════════════════
             result.HasDiscount = result.TotalDiscount > 0 || result.GiftItems.Any();
-
-            _logger.LogInformation(
-                "Kết quả tính KM: HasDiscount={0}, TotalDiscount={1}, AppliedCount={2}, GiftCount={3}",
-                result.HasDiscount, result.TotalDiscount, result.AppliedPromotions.Count, result.GiftItems.Count);
-
             return result;
         }
-        /*
-        /// <summary>
-        /// Xử lý BOGO: Lấy hàng tặng dựa trên Products của KM.
-        /// </summary>
+
+        // --- FIX LỖI 2: THUẬT TOÁN BOGO MỚI DỰA TRÊN VẾ TRÁI / VẾ PHẢI ---
         private List<CartItemDto> ProcessBOGO(PromotionDto bogo, List<CartItemDto> cartItems)
         {
             var gifts = new List<CartItemDto>();
+            if (bogo.Products == null || !bogo.Products.Any()) return gifts;
 
-            // Kiểm tra KM có sản phẩm định nghĩa không
-            if (!bogo.Products.Any())
+            // Bóc tách Vế Trái (Điều kiện mua) và Vế Phải (Hàng tặng)
+            var requiredProducts = bogo.Products.Where(p => !p.IsGiftProduct).ToList();
+            var giftProducts = bogo.Products.Where(p => p.IsGiftProduct).ToList();
+
+            if (!requiredProducts.Any() || !giftProducts.Any()) return gifts;
+
+            bool isEligible = true;
+
+            // Kiểm tra: Khách phải mua ĐỦ tất cả các mặt hàng yêu cầu với số lượng >= RequiredQuantity
+            foreach (var req in requiredProducts)
             {
-                _logger.LogWarning("BOGO KM {0} không có Products định nghĩa", bogo.PromotionCode);
-                return gifts;
+                var cartItem = cartItems.FirstOrDefault(c => c.ProductID == req.ProductID);
+                if (cartItem == null || cartItem.Quantity < req.RequiredQuantity)
+                {
+                    isEligible = false;
+                    break;
+                }
             }
 
-            foreach (var promoProduct in bogo.Products)
+            // Nếu đủ điều kiện -> Xuất quà tặng
+            if (isEligible)
             {
-                // Tìm sản phẩm trong giỏ hàng
-                var cartItem = cartItems
-                    .FirstOrDefault(x => x.ProductID == promoProduct.ProductID);
-
-                if (cartItem == null)
-                {
-                    _logger.LogDebug(
-                        "BOGO KM {0}: Sản phẩm {1} không trong giỏ",
-                        bogo.PromotionCode, promoProduct.ProductID);
-                    continue;
-                }
-
-                // Kiểm tra số lượng điều kiện
-                if (promoProduct.RequiredQuantity.HasValue &&
-                    cartItem.Quantity < promoProduct.RequiredQuantity.Value)
-                {
-                    _logger.LogDebug(
-                        "BOGO KM {0}: Không đạt RequiredQuantity ({1}/{2})",
-                        bogo.PromotionCode, cartItem.Quantity, promoProduct.RequiredQuantity);
-                    continue;
-                }
-
-                // Tạo CartItemDto cho hàng tặng (UnitPrice = 0)
-                if (promoProduct.FreeQuantity.HasValue && promoProduct.FreeQuantity > 0)
+                foreach (var gift in giftProducts)
                 {
                     gifts.Add(new CartItemDto
                     {
-                        ProductID = promoProduct.ProductID,
-                        CategoryID = cartItem.CategoryID,
-                        Quantity = promoProduct.FreeQuantity.Value,
-                        UnitPrice = 0  // Hàng tặng không tính tiền
+                        ProductID = gift.ProductID,
+                        Quantity = gift.FreeQuantity ?? 1,
+                        UnitPrice = 0 // Giá 0đ
                     });
-
-                    _logger.LogDebug(
-                        "BOGO KM {0}: Tặng sản phẩm {1}, số lượng {2}",
-                        bogo.PromotionCode, promoProduct.ProductID, promoProduct.FreeQuantity);
                 }
             }
 
             return gifts;
         }
-        */
-        /// <summary>
-        /// Ghi nhận sử dụng KM (tăng CurrentUsage).
-        /// Gọi từ Module Sales sau khi Invoice confirmed.
-        /// </summary>
+
         public async Task DeductPromotionUsageAsync(long promotionId)
         {
             try
             {
-                await _repository.DeductUsageAsync(promotionId);
-                _logger.LogInformation("Ghi nhận sử dụng KM {0}", promotionId);
+                await _repository.DeductPromotionUsageAsync(promotionId);
             }
             catch (Exception ex)
             {

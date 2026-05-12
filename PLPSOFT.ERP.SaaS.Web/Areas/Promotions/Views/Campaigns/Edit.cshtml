@@ -1,4 +1,429 @@
-﻿@page
-@model PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Views.Campaigns.EditModel
+﻿@using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
+@model PromotionDto
+
 @{
+    Layout = "~/Areas/Promotions/Views/Shared/_PromotionsLayout.cshtml";
+    ViewData["Title"] = "Cập nhật Chương trình Khuyến mãi";
+    bool isExpired = (Model?.Status ?? string.Empty) == "EXPIRED";
+}
+
+<style>
+    /* 1. Styling & Colors */
+    .block-title { font-size: 1.1rem; font-weight: 700; color: #1f3a70; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; }
+    .card-info { border-top: 4px solid #185FA5; }
+    .card-condition { border-top: 4px solid #f59e0b; }
+    .card-action-discount { border-top: 4px solid #10b981; }
+    .card-action-bogo { border-top: 4px solid #6366f1; }
+    
+    .bogo-buy-zone { background-color: #f0f7ff; border: 1px solid #cce3ff; border-radius: 8px; }
+    .bogo-gift-zone { background-color: #f0fff4; border: 1px solid #c6f6d5; border-radius: 8px; }
+    .label-buy { color: #185FA5; font-weight: 700; }
+    .label-gift { color: #059669; font-weight: 700; }
+
+    .is-invalid { border-color: #dc3545 !important; }
+    .invalid-msg { color: #dc3545; font-size: 0.75rem; font-weight: 600; margin-top: 4px; display: none; }
+    
+    .anim-fade { animation: fadeIn 0.3s ease-in; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .form-control:read-only { background-color: #f8f9fa; color: #6c757d; cursor: not-allowed; }
+</style>
+
+<div class="container-fluid anim-fade">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">@ViewData["Title"]</h2>
+            <span class="text-muted">Chỉnh sửa cấu hình và quy tắc vận hành chiến dịch</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Promotions/Campaigns" class="btn btn-outline-secondary">Quay lại</a>
+            @if (!isExpired) {
+                <button type="button" id="btnSave" class="btn btn-primary px-4 shadow">
+                    <i class="ti ti-check me-1"></i> Cập nhật thay đổi
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (isExpired) {
+        <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center mb-4">
+            <i class="ti ti-alert-triangle fs-3 me-3"></i>
+            <div><strong>Chiến dịch đã kết thúc!</strong> Bạn chỉ có thể xem dữ liệu lịch sử, không thể chỉnh sửa.</div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 border-end">
+                    <label class="small text-muted fw-bold d-block mb-2">TRẠNG THÁI</label>
+                    @if (Model.Status == "ACTIVE") {
+                        <span class="badge bg-success text-white py-2 px-4 rounded-pill"><i class="ti ti-player-play-filled me-2"></i>ĐANG CHẠY</span>
+                    } else if (Model.Status == "DRAFT") {
+                        <span class="badge bg-warning text-dark py-2 px-4 rounded-pill"><i class="ti ti-pencil me-2"></i>BẢN NHÁP</span>
+                    } else {
+                        <span class="badge bg-danger text-white py-2 px-4 rounded-pill"><i class="ti ti-clock-stop me-2"></i>HẾT HẠN</span>
+                    }
+                </div>
+                <div class="col-md-9 ps-md-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-bold text-muted text-uppercase">Tiến độ sử dụng ngân sách</span>
+                        <span class="small fw-bold text-primary">@Model.CurrentUsage / @(Model.MaxUsage ?? 0) lượt</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        @{ var percent = Model.MaxUsage > 0 ? (Model.CurrentUsage * 100 / Model.MaxUsage) : 0; }
+                        <div class="progress-bar progress-bar-striped progress-bar-animated @(percent > 90 ? "bg-danger" : "bg-primary")" style="width: @percent%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post" id="mainForm">
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.PromotionID)
+        @Html.HiddenFor(m => m.CompanyID)
+        @Html.HiddenFor(m => m.Status) @Html.HiddenFor(m => m.CurrentUsage) <input type="hidden" asp-for="PromotionType" id="PromoType" />
+
+        <div class="card border-0 shadow-sm mb-4 card-info">
+            <div class="card-body">
+                <h5 class="block-title"><i class="ti ti-info-circle me-2"></i>1. Thông tin chung</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Loại hình khuyến mãi</label>
+                        <input class="form-control fw-bold text-primary" value="@(Model.PromotionType == "BOGO" || Model.PromotionType == "BUY_X_GET_Y" ? "Mua X Tặng Y" : "Giảm giá")" readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Mã khuyến mãi</label>
+                        <input asp-for="PromotionCode" class="form-control font-monospace" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
+                        <input asp-for="PromotionName" class="form-control" disabled="@isExpired" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                        <input asp-for="StartDate" type="date" class="form-control" id="StartDate" disabled="@isExpired" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Ngày kết thúc</label>
+                        <input asp-for="EndDate" type="date" class="form-control" id="EndDate" disabled="@isExpired" />
+                        <div class="invalid-msg" id="date-error">Ngày kết thúc phải sau ngày bắt đầu</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Giới hạn sử dụng</label>
+                        <input asp-for="MaxUsage" type="number" min="0" class="form-control" disabled="@isExpired" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Phạm vi</label>
+                        <select asp-for="BranchId" class="form-select" disabled="@isExpired">
+                            <option value="">Toàn hệ thống</option>
+                            @foreach (var branch in ViewBag.Branches) {
+                                <option value="@branch.BranchID">@branch.BranchName</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4 card-condition">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="block-title mb-0 border-0"><i class="ti ti-filter me-2"></i>2. Điều kiện kích hoạt</h5>
+                    @if (!isExpired) {
+                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="addCondition()">+ Thêm điều kiện</button>
+                    }
+                </div>
+                <div id="conditions-area"></div>
+            </div>
+        </div>
+
+        <div id="section-discount" class="card border-0 shadow-sm mb-4 card-action-discount" style="display:none;">
+            <div class="card-body">
+                <h5 class="block-title"><i class="ti ti-receipt me-2"></i>3. Mức ưu đãi giảm giá</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Kiểu giảm giá</label>
+                        <select id="DiscType" class="form-select" disabled="@isExpired">
+                            @foreach (var dt in ViewBag.DiscountTypes) {
+                                <option value="@dt.ValueCode">@dt.ValueName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Trị giá giảm</label>
+                        <div class="input-group">
+                            <input type="text" id="DiscVal" class="form-control fw-bold text-success format-number" disabled="@isExpired" />
+                            <span class="input-group-text" id="DiscUnit">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="max-disc-col">
+                        <label class="form-label fw-bold">Giảm tối đa</label>
+                        <div class="input-group">
+                            <input type="text" id="MaxDisc" class="form-control format-number" disabled="@isExpired" />
+                            <span class="input-group-text">VNĐ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="form-label fw-bold"><i class="ti ti-package me-1"></i>Sản phẩm áp dụng cụ thể</label>
+                <div class="table-responsive border rounded">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">Sản phẩm</th>
+                                @if (!isExpired) { <th class="text-end pe-3">Thao tác</th> }
+                            </tr>
+                        </thead>
+                        <tbody id="applied-products-body"></tbody>
+                    </table>
+                    @if (!isExpired) {
+                        <div class="p-2 bg-light text-center border-top">
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="addProductRow('applied')">+ Thêm sản phẩm (Trống = Toàn sàn)</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div id="section-bogo" class="card border-0 shadow-sm mb-5 card-action-bogo" style="display:none;">
+            <div class="card-body">
+                <h5 class="block-title"><i class="ti ti-gift me-2"></i>3. Cấu hình Mua X Tặng Y</h5>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="bogo-buy-zone p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="label-buy"><i class="ti ti-shopping-cart"></i> VẾ 1: KHÁCH MUA</span>
+                                @if (!isExpired) {
+                                    <button type="button" class="btn btn-primary btn-select-sp btn-sm" onclick="addProductRow('buy')">+ Thêm SP mua</button>
+                                }
+                            </div>
+                            <table class="table table-sm bg-white rounded shadow-sm">
+                                <tbody id="bogo-buy-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bogo-gift-zone p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="label-gift"><i class="ti ti-gift"></i> VẾ 2: HỆ THỐNG TẶNG</span>
+                                @if (!isExpired) {
+                                    <button type="button" class="btn btn-success btn-select-sp btn-sm" onclick="addProductRow('gift')">+ Thêm SP tặng</button>
+                                }
+                            </div>
+                            <table class="table table-sm bg-white rounded shadow-sm">
+                                <tbody id="bogo-gift-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<template id="tpl-condition">
+    <div class="row g-2 mb-3 condition-row p-2 border rounded bg-white shadow-xs">
+        <input type="hidden" class="val-rule-id" value="0">
+        <div class="col-md-4">
+            <select class="form-select form-select-sm cond-type" onchange="toggleCondFields(this)" disabled="@isExpired">
+                @foreach (var rt in ViewBag.RuleTypes) { <option value="@rt.ValueCode">@rt.ValueName</option> }
+            </select>
+        </div>
+        <div class="col-md-7 cond-input-zone">
+            <div class="f-min-order">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Tổng tiền ≥</span>
+                    <input type="text" class="form-control format-number val-min-order" placeholder="0" disabled="@isExpired" />
+                    <span class="input-group-text">VNĐ</span>
+                </div>
+            </div>
+            <div class="f-category" style="display:none;">
+                <select class="form-select form-select-sm val-cat" disabled="@isExpired">
+                    <option value="">-- Chọn ngành hàng --</option>
+                    @foreach (var c in ViewBag.Categories) { <option value="@c.CategoryID">@c.CategoryName</option> }
+                </select>
+            </div>
+            <div class="f-customer" style="display:none;">
+                <select class="form-select form-select-sm val-cus" disabled="@isExpired">
+                    <option value="">-- Chọn nhóm khách --</option>
+                    @foreach (var g in ViewBag.CustomerGroups) { <option value="@g.GroupID">@g.GroupName</option> }
+                </select>
+            </div>
+        </div>
+        @if (!isExpired) {
+            <div class="col-md-1 text-end"><button type="button" class="btn btn-sm text-danger" onclick="this.closest('.condition-row').remove()"><i class="ti ti-trash"></i></button></div>
+        }
+    </div>
+</template>
+
+@section Scripts {
+    <script>
+        const productsList = @Html.Raw(Json.Serialize(ViewBag.Products));
+        const dbRules = @Html.Raw(Json.Serialize(Model.Rules));
+        const dbProducts = @Html.Raw(Json.Serialize(Model.Products));
+        const promoType = document.getElementById('PromoType');
+        const isReadOnly = @isExpired.ToString().ToLower();
+
+        function initData() {
+            const type = promoType.value;
+            const isBogo = type === 'BUY_X_GET_Y' || type === 'BOGO';
+            document.getElementById('section-discount').style.display = isBogo ? 'none' : 'block';
+            document.getElementById('section-bogo').style.display = isBogo ? 'block' : 'none';
+
+            if (dbRules && dbRules.length > 0) {
+                dbRules.forEach(r => {
+                    addCondition();
+                    const rows = document.querySelectorAll('.condition-row');
+                    const row = rows[rows.length - 1];
+                    row.querySelector('.val-rule-id').value = r.ruleID;
+                    row.querySelector('.cond-type').value = r.ruleType;
+                    row.querySelector('.val-min-order').value = r.minOrderAmount || '';
+                    row.querySelector('.val-cat').value = r.categoryID || '';
+                    row.querySelector('.val-cus').value = r.customerGroupID || '';
+                    
+                    if(!isBogo) { 
+                        document.getElementById('DiscType').value = r.discountType;
+                        document.getElementById('DiscVal').value = r.discountValue;
+                        document.getElementById('MaxDisc').value = r.maxDiscountAmount || '';
+                        
+                        // Ép gọi sự kiện change để đồng bộ chữ % hoặc VNĐ
+                        document.getElementById('DiscType').dispatchEvent(new Event('change'));
+                    }
+                    toggleCondFields(row.querySelector('.cond-type'));
+                });
+            }
+
+            if (dbProducts && dbProducts.length > 0) {
+                dbProducts.forEach(p => {
+                    const target = p.isGiftProduct ? 'gift' : (isBogo ? 'buy' : 'applied');
+                    addProductRow(target); // Sinh ra dòng với chữ "Xóa"
+                    const tbody = document.getElementById(target === 'gift' ? 'bogo-gift-body' : (target === 'buy' ? 'bogo-buy-body' : 'applied-products-body'));
+                    const row = tbody.lastElementChild;
+                    row.querySelector('.p-id').value = p.productID;
+                    if(row.querySelector('.p-qty')) row.querySelector('.p-qty').value = p.isGiftProduct ? p.freeQuantity : p.requiredQuantity;
+                });
+            }
+            formatAllNumbers();
+        }
+
+        function toggleCondFields(select) {
+            const row = select.closest('.condition-row');
+            const val = select.value;
+            row.querySelector('.f-min-order').style.display = val.includes('ORDER') || val.includes('QTY') ? 'block' : 'none';
+            row.querySelector('.f-category').style.display = val.includes('CATEGORY') ? 'block' : 'none';
+            row.querySelector('.f-customer').style.display = val.includes('CUSTOMER') ? 'block' : 'none';
+        }
+
+        function addCondition() {
+            const tpl = document.getElementById('tpl-condition').content.cloneNode(true);
+            document.getElementById('conditions-area').appendChild(tpl);
+        }
+
+        // HÀM NÀY ĐÃ ĐƯỢC ĐƯA RA NGOÀI VÀ CÓ CHỮ "XÓA"
+        function addProductRow(target) {
+            let bodyId = target === 'applied' ? 'applied-products-body' : (target === 'buy' ? 'bogo-buy-body' : 'bogo-gift-body');
+            const isGift = target === 'gift';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <select class="form-select form-select-sm p-id border-0" ${isReadOnly ? 'disabled' : ''}>
+                        <option value="">-- Chọn sản phẩm --</option>
+                        ${productsList.map(p => `<option value="${p.productID}">${p.productCode} - ${p.productName}</option>`).join('')}
+                    </select>
+                </td>
+                <td width="130px">
+                    ${target !== 'applied' ? `
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control p-qty" value="1" min="1" oninput="this.value = Math.abs(this.value)" ${isReadOnly ? 'disabled' : ''}>
+                            <span class="input-group-text">${isGift ? 'Tặng' : 'Mua'}</span>
+                        </div>` : `<span class="badge bg-light text-dark border">Áp dụng</span>`}
+                </td>
+                <td class="text-end pe-2">
+                    ${!isReadOnly ? `<button type="button" class="btn btn-sm text-danger fw-bold" onclick="this.closest('tr').remove()">Xóa</button>` : ''}
+                    <input type="hidden" class="p-is-gift" value="${isGift}">
+                </td>
+            `;
+            document.getElementById(bodyId).appendChild(row);
+        }
+
+        function formatAllNumbers() {
+            document.querySelectorAll('.format-number').forEach(i => {
+                if(i.value) i.value = parseInt(i.value.replace(/[^0-9]/g, '')).toLocaleString('vi-VN');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initData);
+
+        const discType = document.getElementById('DiscType');
+        if(discType) {
+            discType.onchange = function() {
+                document.getElementById('DiscUnit').textContent = this.value === 'PERCENT' ? '%' : 'VNĐ';
+                document.getElementById('max-disc-col').style.visibility = this.value === 'PERCENT' ? 'visible' : 'hidden';
+                
+                let valInput = document.getElementById('DiscVal');
+                let num = parseInt(valInput.value.replace(/[^0-9]/g, ''));
+                if (this.value === 'PERCENT' && num > 100) {
+                    valInput.value = '100';
+                }
+            };
+        }
+
+        document.addEventListener('input', e => {
+            if(e.target.classList.contains('format-number')) {
+                let val = e.target.value.replace(/[^0-9]/g, '');
+                if (val) {
+                    let num = parseInt(val);
+                    if (e.target.id === 'DiscVal') {
+                        const dt = document.getElementById('DiscType').value;
+                        if (dt === 'PERCENT' && num > 100) num = 100;
+                    }
+                    e.target.value = num.toLocaleString('vi-VN');
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
+
+        // SUBMIT
+        document.getElementById('btnSave').onclick = function() {
+            const form = document.getElementById('mainForm');
+            const isBogo = promoType.value === 'BUY_X_GET_Y' || promoType.value === 'BOGO';
+
+            const rules = [];
+            document.querySelectorAll('.condition-row').forEach((row, i) => {
+                const rt = row.querySelector('.cond-type').value;
+                rules.push({
+                    RuleID: row.querySelector('.val-rule-id').value,
+                    RuleType: rt,
+                    MinOrderAmount: rt.includes('ORDER') ? parseFloat(row.querySelector('.val-min-order').value.replace(/\./g, '')) || 0 : null,
+                    CategoryID: rt.includes('CATEGORY') ? row.querySelector('.val-cat').value : null,
+                    CustomerGroupID: rt.includes('CUSTOMER') ? row.querySelector('.val-cus').value : null,
+                    DiscountType: !isBogo ? document.getElementById('DiscType').value : 'AMOUNT',
+                    DiscountValue: !isBogo ? parseFloat(document.getElementById('DiscVal').value.replace(/\./g, '')) || 0 : 0,
+                    MaxDiscountAmount: !isBogo ? parseFloat(document.getElementById('MaxDisc').value.replace(/\./g, '')) || 0 : null
+                });
+            });
+            
+            const products = [];
+            document.querySelectorAll('#applied-products-body tr, #bogo-buy-body tr, #bogo-gift-body tr').forEach(tr => {
+                const pid = tr.querySelector('.p-id').value;
+                if(pid) {
+                    const isGift = tr.querySelector('.p-is-gift').value === 'true';
+                    products.push({
+                        ProductID: pid,
+                        IsGiftProduct: isGift,
+                        RequiredQuantity: !isGift ? (tr.querySelector('.p-qty')?.value || 0) : null,
+                        FreeQuantity: isGift ? (tr.querySelector('.p-qty')?.value || 0) : null
+                    });
+                }
+            });
+
+            rules.forEach((r, i) => Object.keys(r).forEach(k => { if(r[k]!==null) form.insertAdjacentHTML('beforeend', `<input type="hidden" name="Rules[${i}].${k}" value="${r[k]}">`); }));
+            products.forEach((p, i) => Object.keys(p).forEach(k => { if(p[k]!==null) form.insertAdjacentHTML('beforeend', `<input type="hidden" name="Products[${i}].${k}" value="${p[k]}">`); }));
+
+            form.submit();
+        };
+    </script>
 }

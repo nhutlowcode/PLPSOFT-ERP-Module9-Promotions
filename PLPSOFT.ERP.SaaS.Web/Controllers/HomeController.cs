@@ -8,7 +8,8 @@ namespace PLPSOFT.ERP.SaaS.Web.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            // Bẻ lái (Redirect) thẳng vào trang Danh sách Khuyến mãi của Module 9
+            return RedirectToAction("Index", "Campaigns", new { area = "Promotions" });
         }
 
         public IActionResult Privacy()

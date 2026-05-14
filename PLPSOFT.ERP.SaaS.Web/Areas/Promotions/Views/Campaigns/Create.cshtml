@@ -33,10 +33,10 @@
 </style>
 
 <div class="container-fluid anim-fade">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 sticky-action-bar">
         <div>
             <h2 class="fw-bold text-dark mb-0">@ViewData["Title"]</h2>
-            <span class="text-muted">Định nghĩa chiến dịch Marketing và quy tắc giá [cite: 179]</span>
+            <span class="text-muted">Định nghĩa chiến dịch Marketing và quy tắc giá</span>
         </div>
         <div class="d-flex gap-2">
             <a href="/Promotions/Campaigns" class="btn btn-outline-secondary">Hủy bỏ</a>
@@ -60,33 +60,38 @@
                                 <option value="@type.ValueCode">@type.ValueName</option>
                             }
                         </select>
-                        <small class="text-muted">Chọn hướng áp dụng (Giảm tiền hoặc Tặng hàng) [cite: 190, 196]</small>
+                        <span asp-validation-for="PromotionType" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Mã khuyến mãi <span class="text-danger">*</span></label>
                         <input asp-for="PromotionCode" class="form-control font-monospace" placeholder="VD: KM2026-XUAN" />
+                        <span asp-validation-for="PromotionCode" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
                         <input asp-for="PromotionName" class="form-control" placeholder="VD: Tri ân khách hàng tháng 5" />
+                        <span asp-validation-for="PromotionName" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
                         <input asp-for="StartDate" type="date" class="form-control" id="StartDate" />
+                        <span asp-validation-for="StartDate" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Ngày kết thúc</label>
                         <input asp-for="EndDate" type="date" class="form-control" id="EndDate" />
+                        <span asp-validation-for="EndDate" class="text-danger small fw-bold"></span>
                         <div class="invalid-msg" id="date-error">Ngày kết thúc phải sau ngày bắt đầu</div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Giới hạn sử dụng</label>
                         <input asp-for="MaxUsage" type="number" min="0" class="form-control" placeholder="∞ (Vô hạn)" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                        <span asp-validation-for="MaxUsage" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Phạm vi</label>
                         <select asp-for="BranchId" class="form-select">
-                            <option value="">Toàn hệ thống [cite: 186]</option>
+                            <option value="">Toàn hệ thống</option>
                             @foreach (var branch in ViewBag.Branches) {
                                 <option value="@branch.BranchID">@branch.BranchName</option>
                             }
@@ -102,8 +107,7 @@
                     <h5 class="block-title mb-0 border-0"><i class="ti ti-filter me-2"></i>2. Điều kiện kích hoạt</h5>
                     <button type="button" class="btn btn-sm btn-outline-warning" onclick="addCondition()">+ Thêm điều kiện</button>
                 </div>
-                <div id="conditions-area">
-                    </div>
+                <div id="conditions-area"></div>
             </div>
         </div>
 
@@ -130,12 +134,12 @@
                         <label class="form-label fw-bold">Giảm tối đa (Trần)</label>
                         <div class="input-group">
                             <input type="text" id="MaxDisc" class="form-control format-number" placeholder="0" />
-                            <span class="input-group-text">VNĐ [cite: 192]</span>
+                            <span class="input-group-text">VNĐ</span>
                         </div>
                     </div>
                 </div>
 
-                <label class="form-label fw-bold"><i class="ti ti-package me-1"></i>Sản phẩm áp dụng</label>
+                <label class="form-label fw-bold"><i class="ti ti-package me-1"></i>Sản phẩm áp dụng cụ thể</label>
                 <div class="table-responsive border rounded">
                     <table class="table table-sm align-middle mb-0">
                         <thead class="bg-light">
@@ -144,8 +148,7 @@
                                 <th class="text-end pe-3">Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody id="applied-products-body">
-                            </tbody>
+                        <tbody id="applied-products-body"></tbody>
                     </table>
                     <div class="p-2 bg-light text-center border-top">
                         <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="addProductRow('applied')">+ Thêm sản phẩm (Để trống = Áp dụng toàn sàn)</button>
@@ -168,8 +171,8 @@
                                 <thead>
                                     <tr class="small text-muted">
                                         <th class="ps-2">Tên sản phẩm</th>
-                                        <th width="100px">Số lượng</th>
-                                        <th width="40px"></th>
+                                        <th width="130px">Số lượng</th>
+                                        <th width="50px"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="bogo-buy-body"></tbody>
@@ -188,8 +191,8 @@
                                 <thead>
                                     <tr class="small text-muted">
                                         <th class="ps-2">Tên quà tặng</th>
-                                        <th width="100px">Số lượng</th>
-                                        <th width="40px"></th>
+                                        <th width="130px">Số lượng</th>
+                                        <th width="50px"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="bogo-gift-body"></tbody>
@@ -234,7 +237,7 @@
             </div>
         </div>
         <div class="col-md-1 text-end">
-            <button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('.condition-row').remove()">Xóa</button>
+            <button type="button" class="btn btn-sm text-danger fw-bold" onclick="this.closest('.condition-row').remove()">Xóa</button>
         </div>
     </div>
 </template>
@@ -242,20 +245,16 @@
 @section Scripts {
     <script>
         const productsList = @Html.Raw(Json.Serialize(ViewBag.Products));
-        // Lấy lại dữ liệu cũ từ Controller trả về (nếu có lỗi khi Save)
         const existingRules = @Html.Raw(Json.Serialize(Model?.Rules ?? new List<PromotionRuleDto>()));
         const existingProducts = @Html.Raw(Json.Serialize(Model?.Products ?? new List<PromotionProductDto>()));
         const promoType = document.getElementById('PromoType');
 
-        // --- HÀM KHỞI TẠO (QUAN TRỌNG NHẤT) ---
         function initInterfaceState() {
-            // 1. Kích hoạt logic ẩn hiện khối chính (Giảm giá/BOGO)
             if (promoType) toggleMainSection(promoType.value);
 
-            // 2. Phục hồi dữ liệu Quy tắc (Rules) từ lần nhập trước
             if (existingRules && existingRules.length > 0 && document.querySelectorAll('.condition-row').length === 0) {
                 existingRules.forEach(r => {
-                    addCondition(); // Sinh ra dòng HTML trống
+                    addCondition();
                     const rows = document.querySelectorAll('.condition-row');
                     const lastRow = rows[rows.length - 1];
                     
@@ -268,25 +267,24 @@
                 });
             }
 
-            // 3. Phục hồi dữ liệu Sản phẩm (Products) từ lần nhập trước
-            const isBogo = promoType.value === 'BUY_X_GET_Y' || promoType.value === 'BOGO';
             if (existingProducts && existingProducts.length > 0 && document.querySelectorAll('.p-id').length === 0) {
                 existingProducts.forEach(p => {
                     const target = p.isGiftProduct ? 'gift' : (isBogo ? 'buy' : 'applied');
-                    addProductRow(target); // Sinh ra dòng HTML trống
+                    addProductRow(target);
                     
                     let tbodyId = target === 'applied' ? 'applied-products-body' : (target === 'buy' ? 'bogo-buy-body' : 'bogo-gift-body');
                     const rows = document.getElementById(tbodyId).querySelectorAll('tr');
                     const lastRow = rows[rows.length - 1];
                     
-                    lastRow.querySelector('.p-id').value = p.productID;
+                    // FIX: Kích hoạt select2 cho giá trị cũ
+                    $(lastRow).find('.p-id').val(p.productID).trigger('change');
+                    
                     if (target !== 'applied') {
                         lastRow.querySelector('.p-qty').value = p.isGiftProduct ? p.freeQuantity : p.requiredQuantity;
                     }
                 });
             }
 
-            // 4. Định dạng lại toàn bộ số tiền đang có trên form
             document.querySelectorAll('.format-number').forEach(input => {
                 if(input.value) {
                     input.value = parseInt(input.value.replace(/[^0-9]/g, '')).toLocaleString('vi-VN');
@@ -310,7 +308,6 @@
 
         promoType.onchange = function() {
             toggleMainSection(this.value);
-            // Xóa dữ liệu rác khi đổi loại KM
             if (this.value === 'BUY_X_GET_Y' || this.value === 'BOGO') {
                 document.getElementById('applied-products-body').innerHTML = '';
             } else {
@@ -319,7 +316,6 @@
             }
         };
 
-        // --- CÁC HÀM XỬ LÝ ĐỘNG ---
         function addCondition() {
             const tpl = document.getElementById('tpl-condition').content.cloneNode(true);
             document.getElementById('conditions-area').appendChild(tpl);
@@ -352,7 +348,7 @@
             row.className = 'anim-fade';
             row.innerHTML = `
                 <td class="ps-2">
-                    <select class="form-select form-select-sm p-id shadow-none border-0 border-bottom">
+                    <select class="form-select form-select-sm p-id">
                         <option value="">-- Chọn sản phẩm --</option>
                         ${productsList.map(p => `<option value="${p.productID}">${p.productCode} - ${p.productName}</option>`).join('')}
                     </select>
@@ -370,6 +366,10 @@
                 </td>
             `;
             document.getElementById(bodyId).appendChild(row);
+            
+            // Kích hoạt Select2 cho dòng vừa thêm
+            $(row).find('.p-id').select2({ theme: 'bootstrap-5', width: '100%' });
+            
             checkEmptyMsg();
         }
 
@@ -380,7 +380,6 @@
             if(giftMsg) giftMsg.style.display = document.getElementById('bogo-gift-body').children.length > 0 ? 'none' : 'block';
         }
 
-        // Định dạng tiền tệ và đơn vị
         const discType = document.getElementById('DiscType');
         if(discType) {
             discType.onchange = function() {
@@ -389,24 +388,17 @@
             };
         }
 
-        // Bắt sự kiện khi người dùng gõ vào các ô số
         document.addEventListener('input', e => {
             if(e.target.classList.contains('format-number')) {
-                // Xóa mọi ký tự không phải số (Chặn số âm, chữ cái)
                 let val = e.target.value.replace(/[^0-9]/g, '');
-                
                 if (val) {
                     let num = parseInt(val);
-
-                    // FIX BUG: Nếu là ô Trị giá giảm VÀ đang chọn loại % -> Ép tối đa 100
                     if (e.target.id === 'DiscVal') {
-                        const discType = document.getElementById('DiscType').value;
-                        if (discType === 'PERCENT' && num > 100) {
+                        const dt = document.getElementById('DiscType').value;
+                        if (dt === 'PERCENT' && num > 100) {
                             num = 100; 
                         }
                     }
-
-                    // Format lại có dấu chấm hàng nghìn
                     e.target.value = num.toLocaleString('vi-VN');
                 } else {
                     e.target.value = '';
@@ -414,13 +406,16 @@
             }
         });
 
-        // --- SUBMIT DỮ LIỆU ---
         document.getElementById('btnSave').onclick = function() {
+            // FIX: Chặn Submit nếu lỗi Validate
+            if (!$("#mainForm").valid()) {
+                return;
+            }
+
             const form = document.getElementById('mainForm');
             const type = promoType.value;
             const isBogo = type === 'BUY_X_GET_Y' || type === 'BOGO';
 
-            // Validate Thời gian
             const sDate = new Date(document.getElementById('StartDate').value);
             const eDate = new Date(document.getElementById('EndDate').value);
             if(eDate && eDate < sDate) {
@@ -477,7 +472,6 @@
                 collect('#applied-products-body', false);
             }
 
-            // Gắn dữ liệu vào input hidden
             rules.forEach((r, i) => {
                 Object.keys(r).forEach(k => {
                     if(r[k] !== null) form.insertAdjacentHTML('beforeend', `<input type="hidden" name="Rules[${i}].${k}" value="${r[k]}">`);

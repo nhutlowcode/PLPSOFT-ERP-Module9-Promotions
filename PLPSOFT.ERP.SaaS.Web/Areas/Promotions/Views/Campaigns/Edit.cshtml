@@ -8,7 +8,6 @@
 }
 
 <style>
-    /* 1. Styling & Colors */
     .block-title { font-size: 1.1rem; font-weight: 700; color: #1f3a70; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; }
     .card-info { border-top: 4px solid #185FA5; }
     .card-condition { border-top: 4px solid #f59e0b; }
@@ -30,7 +29,7 @@
 </style>
 
 <div class="container-fluid anim-fade">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 sticky-action-bar">
         <div>
             <h2 class="fw-bold text-dark mb-0">@ViewData["Title"]</h2>
             <span class="text-muted">Chỉnh sửa cấu hình và quy tắc vận hành chiến dịch</span>
@@ -83,7 +82,9 @@
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.PromotionID)
         @Html.HiddenFor(m => m.CompanyID)
-        @Html.HiddenFor(m => m.Status) @Html.HiddenFor(m => m.CurrentUsage) <input type="hidden" asp-for="PromotionType" id="PromoType" />
+        @Html.HiddenFor(m => m.Status) 
+        @Html.HiddenFor(m => m.CurrentUsage) 
+        <input type="hidden" asp-for="PromotionType" id="PromoType" />
 
         <div class="card border-0 shadow-sm mb-4 card-info">
             <div class="card-body">
@@ -96,23 +97,28 @@
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Mã khuyến mãi</label>
                         <input asp-for="PromotionCode" class="form-control font-monospace" readonly />
+                        <span asp-validation-for="PromotionCode" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
                         <input asp-for="PromotionName" class="form-control" disabled="@isExpired" />
+                        <span asp-validation-for="PromotionName" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
                         <input asp-for="StartDate" type="date" class="form-control" id="StartDate" disabled="@isExpired" />
+                        <span asp-validation-for="StartDate" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Ngày kết thúc</label>
                         <input asp-for="EndDate" type="date" class="form-control" id="EndDate" disabled="@isExpired" />
+                        <span asp-validation-for="EndDate" class="text-danger small fw-bold"></span>
                         <div class="invalid-msg" id="date-error">Ngày kết thúc phải sau ngày bắt đầu</div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Giới hạn sử dụng</label>
                         <input asp-for="MaxUsage" type="number" min="0" class="form-control" disabled="@isExpired" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                        <span asp-validation-for="MaxUsage" class="text-danger small fw-bold"></span>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Phạm vi</label>
@@ -253,7 +259,7 @@
             </div>
         </div>
         @if (!isExpired) {
-            <div class="col-md-1 text-end"><button type="button" class="btn btn-sm text-danger" onclick="this.closest('.condition-row').remove()"><i class="ti ti-trash"></i></button></div>
+            <div class="col-md-1 text-end"><button type="button" class="btn btn-sm text-danger fw-bold" onclick="this.closest('.condition-row').remove()">Xóa</button></div>
         }
     </div>
 </template>
@@ -288,7 +294,6 @@
                         document.getElementById('DiscVal').value = r.discountValue;
                         document.getElementById('MaxDisc').value = r.maxDiscountAmount || '';
                         
-                        // Ép gọi sự kiện change để đồng bộ chữ % hoặc VNĐ
                         document.getElementById('DiscType').dispatchEvent(new Event('change'));
                     }
                     toggleCondFields(row.querySelector('.cond-type'));
@@ -298,10 +303,13 @@
             if (dbProducts && dbProducts.length > 0) {
                 dbProducts.forEach(p => {
                     const target = p.isGiftProduct ? 'gift' : (isBogo ? 'buy' : 'applied');
-                    addProductRow(target); // Sinh ra dòng với chữ "Xóa"
+                    addProductRow(target);
                     const tbody = document.getElementById(target === 'gift' ? 'bogo-gift-body' : (target === 'buy' ? 'bogo-buy-body' : 'applied-products-body'));
                     const row = tbody.lastElementChild;
-                    row.querySelector('.p-id').value = p.productID;
+                    
+                    // FIX: Kích hoạt select2 cho giá trị cũ
+                    $(row).find('.p-id').val(p.productID).trigger('change');
+                    
                     if(row.querySelector('.p-qty')) row.querySelector('.p-qty').value = p.isGiftProduct ? p.freeQuantity : p.requiredQuantity;
                 });
             }
@@ -321,14 +329,13 @@
             document.getElementById('conditions-area').appendChild(tpl);
         }
 
-        // HÀM NÀY ĐÃ ĐƯỢC ĐƯA RA NGOÀI VÀ CÓ CHỮ "XÓA"
         function addProductRow(target) {
             let bodyId = target === 'applied' ? 'applied-products-body' : (target === 'buy' ? 'bogo-buy-body' : 'bogo-gift-body');
             const isGift = target === 'gift';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <select class="form-select form-select-sm p-id border-0" ${isReadOnly ? 'disabled' : ''}>
+                    <select class="form-select form-select-sm p-id" ${isReadOnly ? 'disabled' : ''}>
                         <option value="">-- Chọn sản phẩm --</option>
                         ${productsList.map(p => `<option value="${p.productID}">${p.productCode} - ${p.productName}</option>`).join('')}
                     </select>
@@ -346,6 +353,9 @@
                 </td>
             `;
             document.getElementById(bodyId).appendChild(row);
+            
+            // Kích hoạt Select2 cho dòng vừa thêm
+            $(row).find('.p-id').select2({ theme: 'bootstrap-5', width: '100%', disabled: isReadOnly });
         }
 
         function formatAllNumbers() {
@@ -386,8 +396,12 @@
             }
         });
 
-        // SUBMIT
         document.getElementById('btnSave').onclick = function() {
+            // FIX: Chặn Submit nếu lỗi Validate
+            if (!$("#mainForm").valid()) {
+                return;
+            }
+
             const form = document.getElementById('mainForm');
             const isBogo = promoType.value === 'BUY_X_GET_Y' || promoType.value === 'BOGO';
 

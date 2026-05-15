@@ -6,6 +6,28 @@
     ViewData["Title"] = "Chương trình Khuyến mãi";
 }
 
+<style>
+    /* Chữa cháy viền xanh cho thanh tìm kiếm */
+    .custom-search-box {
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        background-color: #fff;
+        transition: all 0.2s ease-in-out;
+    }
+    /* Khi click vào input, cho cả cụm phát sáng */
+    .custom-search-box:focus-within {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    /* Xóa viền thừa của các thẻ con bên trong */
+    .custom-search-box .input-group-text,
+    .custom-search-box .form-control {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="mb-1" style="font-size: 1.5rem; font-weight: 600; color: #1f3a70;">
@@ -25,70 +47,93 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Đang chạy</p>
-                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #0F6E56;">
-                            @Model.Count(x => x.Status == "ACTIVE")
-                        </h3>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #0F6E56;">@ViewBag.CountActive</h3>
                     </div>
-                    <div class="p-2 rounded" style="background: #E1F5EE;">
-                        <i class="ti ti-player-play fs-3" style="color: #0F6E56;"></i>
-                    </div>
+                    <div class="p-2 rounded" style="background: #E1F5EE;"><i class="ti ti-player-play fs-3" style="color: #0F6E56;"></i></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm" style="border-left: 4px solid #185FA5; border-radius: 8px;">
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Bản nháp</p>
-                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #185FA5;">
-                            @Model.Count(x => x.Status == "DRAFT")
-                        </h3>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #185FA5;">@ViewBag.CountDraft</h3>
                     </div>
-                    <div class="p-2 rounded" style="background: #E6F1FB;">
-                        <i class="ti ti-pencil fs-3" style="color: #185FA5;"></i>
-                    </div>
+                    <div class="p-2 rounded" style="background: #E6F1FB;"><i class="ti ti-pencil fs-3" style="color: #185FA5;"></i></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm" style="border-left: 4px solid #A32D2D; border-radius: 8px;">
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Hết hạn</p>
-                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #A32D2D;">
-                            @Model.Count(x => x.Status == "EXPIRED")
-                        </h3>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #A32D2D;">@ViewBag.CountExpired</h3>
                     </div>
-                    <div class="p-2 rounded" style="background: #FCEBEB;">
-                        <i class="ti ti-clock-stop fs-3" style="color: #A32D2D;"></i>
-                    </div>
+                    <div class="p-2 rounded" style="background: #FCEBEB;"><i class="ti ti-clock-stop fs-3" style="color: #A32D2D;"></i></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col-md-6 col-lg-3">
         <div class="card border-0 shadow-sm" style="border-left: 4px solid #BA7517; border-radius: 8px;">
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="mb-1 text-uppercase fw-bold" style="font-size: 11px; color: #6c757d; letter-spacing: 0.5px;">Tổng cộng</p>
-                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #BA7517;">
-                            @Model.Count
-                        </h3>
+                        <h3 class="mb-0" style="font-size: 24px; font-weight: 600; color: #BA7517;">@ViewBag.CountTotal</h3>
                     </div>
-                    <div class="p-2 rounded" style="background: #FDF3E1;">
-                        <i class="ti ti-sum fs-3" style="color: #BA7517;"></i>
-                    </div>
+                    <div class="p-2 rounded" style="background: #FDF3E1;"><i class="ti ti-sum fs-3" style="color: #BA7517;"></i></div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+    <div class="card-body p-3">
+        <form method="get" asp-action="Index">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group custom-search-box">
+                        <span class="input-group-text ps-3 pe-2">
+                            <i class="ti ti-search text-muted"></i>
+                        </span>
+                        <input type="text" name="keyword" class="form-control ps-0" placeholder="Tìm theo Mã hoặc Tên khuyến mãi..." value="@ViewBag.Keyword">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="type" class="form-select">
+                        <option value="">-- Tất cả Loại hình --</option>
+                        <option value="DISCOUNT" selected="@(ViewBag.Type == "DISCOUNT")">Giảm giá</option>
+                        <option value="BOGO" selected="@(ViewBag.Type == "BOGO")">Mua X Tặng Y</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">-- Tất cả Trạng thái --</option>
+                        <option value="ACTIVE" selected="@(ViewBag.Status == "ACTIVE")">Đang chạy</option>
+                        <option value="DRAFT" selected="@(ViewBag.Status == "DRAFT")">Bản nháp</option>
+                        <option value="EXPIRED" selected="@(ViewBag.Status == "EXPIRED")">Hết hạn</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1">
+                            <i class="ti ti-filter"></i> Lọc
+                        </button>
+                        <a href="/Promotions/Campaigns" class="btn btn-outline-secondary px-3 d-flex align-items-center justify-content-center" title="Xóa bộ lọc">
+                            Hủy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -121,13 +166,13 @@
                                 </div>
                             </td>
                             <td>
-                                @if (promo.PromotionType == "DISCOUNT_PERCENT" || promo.PromotionType == "DISCOUNT_AMOUNT" || promo.PromotionType == "DISCOUNT")
+                                @if (promo.PromotionType.Contains("DISCOUNT"))
                                 {
                                     <span class="badge rounded-pill" style="background: #E6F1FB; color: #185FA5; font-weight: 500;">
                                         <i class="ti ti-tags me-1"></i>Giảm giá
                                     </span>
                                 }
-                                else if (promo.PromotionType == "BUY_X_GET_Y" || promo.PromotionType == "BOGO")
+                                else if (promo.PromotionType.Contains("BOGO") || promo.PromotionType == "BUY_X_GET_Y")
                                 {
                                     <span class="badge rounded-pill" style="background: #EEEDFE; color: #534AB7; font-weight: 500;">
                                         <i class="ti ti-gift me-1"></i>Mua X Tặng Y
@@ -191,12 +236,21 @@
                                         </form>
                                     }
 
-                                    <form asp-action="Delete" asp-route-id="@promo.PromotionID" method="post" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này? Hành động này không thể hoàn tác!')">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
-                                            <i class="ti ti-trash"></i> Xóa
+                                    @if (promo.Status == "DRAFT" && promo.CurrentUsage == 0)
+                                    {
+                                        <form asp-action="Delete" asp-route-id="@promo.PromotionID" method="post" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này? Hành động này không thể hoàn tác!')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                                                <i class="ti ti-trash"></i> Xóa
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 opacity-50" style="cursor: not-allowed;" title="Không thể xóa khuyến mãi đã kích hoạt, hết hạn hoặc đã có lượt sử dụng">
+                                            <i class="ti ti-trash-off"></i> Khóa xóa
                                         </button>
-                                    </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -204,17 +258,42 @@
                 </tbody>
             </table>
         </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="card-footer bg-white border-top py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Hiển thị @Model.Count trên tổng số @ViewBag.TotalItems chiến dịch</span>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="/Promotions/Campaigns?page=@(ViewBag.CurrentPage - 1)&keyword=@ViewBag.Keyword&type=@ViewBag.Type&status=@ViewBag.Status">Trước</a>
+                            </li>
+                            
+                            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                            {
+                                <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                                    <a class="page-link" href="/Promotions/Campaigns?page=@i&keyword=@ViewBag.Keyword&type=@ViewBag.Type&status=@ViewBag.Status">@i</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="/Promotions/Campaigns?page=@(ViewBag.CurrentPage + 1)&keyword=@ViewBag.Keyword&type=@ViewBag.Type&status=@ViewBag.Status">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        }
     }
     else
     {
         <div class="text-center py-5">
-            <div class="mb-3">
-                <i class="ti ti-discount-off text-muted opacity-25" style="font-size: 4rem;"></i>
-            </div>
-            <h5 class="text-dark fw-medium">Chưa có chương trình khuyến mãi nào</h5>
-            <p class="text-muted mb-4">Bạn có thể bắt đầu tạo chiến dịch giảm giá hoặc mua X tặng Y ngay bây giờ.</p>
-            <a href="/Promotions/Campaigns/Create" class="btn btn-primary shadow-sm">
-                <i class="ti ti-plus me-1"></i> Tạo khuyến mãi đầu tiên
+            <div class="mb-3"><i class="ti ti-search text-muted opacity-25" style="font-size: 4rem;"></i></div>
+            <h5 class="text-dark fw-medium">Không tìm thấy dữ liệu</h5>
+            <p class="text-muted mb-4">Không có chiến dịch nào khớp với điều kiện tìm kiếm của bạn.</p>
+            <a href="/Promotions/Campaigns" class="btn btn-outline-primary shadow-sm">
+                <i class="ti ti-refresh me-1"></i> Đặt lại bộ lọc
             </a>
         </div>
     }

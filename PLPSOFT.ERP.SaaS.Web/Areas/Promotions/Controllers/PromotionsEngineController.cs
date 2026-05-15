@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs;
 using PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Interfaces;
 
-namespace PLPSOFT.ERP.SaaS.Web.Controllers
+namespace PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Controllers
 {
     [ApiController]
     [Route("api/promotions/engine")]

@@ -20,35 +20,83 @@ namespace PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Controllers
 
         // GET: /Promotions/Campaigns
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string keyword, string status, string type, int page = 1)
         {
             try
             {
                 long companyID = 1;  // TODO: Get từ user context
-                var promotions = await _repository.GetAllByCompanyAsync(companyID);
+                var allPromotions = await _repository.GetAllByCompanyAsync(companyID);
 
                 // --- CƠ CHẾ LAZY UPDATE: Tự động cập nhật trạng thái Hết hạn ---
-                var currentDate = DateTime.Now.Date; // Chỉ lấy ngày hiện tại (bỏ qua giờ phút) để so sánh chuẩn xác
-                bool hasExpiredUpdates = false;
-
-                foreach (var promo in promotions)
+                var currentDate = DateTime.Now.Date;
+                foreach (var promo in allPromotions)
                 {
-                    // Nếu đang chạy mà ngày kết thúc nhỏ hơn hôm nay -> Hết hạn
                     if (promo.Status == "ACTIVE" && promo.EndDate.HasValue && promo.EndDate.Value.Date < currentDate)
                     {
-                        // Cập nhật ngầm dưới Database
                         await _repository.UpdateStatusAsync(promo.PromotionID, "EXPIRED");
-                        // Cập nhật đối tượng hiện tại để hiển thị ra View ngay lập tức
                         promo.Status = "EXPIRED";
-                        hasExpiredUpdates = true;
                     }
                 }
 
-                // Nếu có cập nhật trạng thái, có thể bạn muốn ghi log ở đây (tùy chọn)
-                // if (hasExpiredUpdates) { _logger.LogInformation("Đã quét và cập nhật các KM hết hạn."); }
-                // ----------------------------------------------------------------
+                // Lưu lại các con số tổng quan cho 4 thẻ Thống kê (trước khi bị lọc)
+                ViewBag.CountActive = allPromotions.Count(x => x.Status == "ACTIVE");
+                ViewBag.CountDraft = allPromotions.Count(x => x.Status == "DRAFT");
+                ViewBag.CountExpired = allPromotions.Count(x => x.Status == "EXPIRED");
+                ViewBag.CountTotal = allPromotions.Count();
 
-                return View(promotions);
+                // ==========================================
+                // 1. XỬ LÝ TÌM KIẾM & BỘ LỌC (SEARCH & FILTER)
+                // ==========================================
+                var query = allPromotions.AsEnumerable();
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    keyword = keyword.Trim().ToLower();
+                    query = query.Where(p => p.PromotionCode.ToLower().Contains(keyword) ||
+                                             p.PromotionName.ToLower().Contains(keyword));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    query = query.Where(p => p.Status == status);
+                }
+
+                if (!string.IsNullOrWhiteSpace(type))
+                {
+                    if (type == "DISCOUNT")
+                        query = query.Where(p => p.PromotionType.Contains("DISCOUNT"));
+                    else
+                        query = query.Where(p => p.PromotionType.Contains(type));
+                }
+
+                // ==========================================
+                // 2. XỬ LÝ PHÂN TRANG (PAGINATION)
+                // ==========================================
+                // ĐANG ĐỂ LÀ 3 ĐỂ BẠN DỄ TEST (Test xong có thể đổi thành 10)
+                int pageSize = 5;
+
+                int totalItems = query.Count();
+                int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                // Nếu user nhập số trang bậy bạ, ép về trang hợp lệ
+                if (page < 1) page = 1;
+                if (page > totalPages && totalPages > 0) page = totalPages;
+
+                // Cắt dữ liệu lấy đúng trang hiện tại
+                var pagedData = query.OrderByDescending(p => p.PromotionID)
+                                     .Skip((page - 1) * pageSize)
+                                     .Take(pageSize)
+                                     .ToList();
+
+                // Truyền dữ liệu phân trang và bộ lọc ra View
+                ViewBag.Keyword = keyword;
+                ViewBag.Status = status;
+                ViewBag.Type = type;
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalItems = totalItems;
+
+                return View(pagedData);
             }
             catch (Exception ex)
             {
@@ -261,8 +309,24 @@ namespace PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Controllers
         {
             try
             {
+                // 1. Lấy thông tin KM lên để kiểm tra trước khi chém
+                var promo = await _repository.GetPromotionByIdAsync(id);
+                if (promo == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy chương trình khuyến mãi cần xóa.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // 2. NGHIỆP VỤ: Chặn xóa nếu Đang chạy, Đã hết hạn hoặc Đã có người dùng
+                if (promo.Status == "ACTIVE" || promo.Status == "EXPIRED" || promo.CurrentUsage > 0)
+                {
+                    TempData["ErrorMessage"] = "Lỗi nghiệp vụ: Chỉ có thể xóa các chiến dịch ở trạng thái BẢN NHÁP và chưa có lượt sử dụng!";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // 3. Nếu an toàn (DRAFT và Usage = 0) thì mới thực thi xóa
                 await _repository.DeletePromotionAsync(id);
-                TempData["SuccessMessage"] = "Xóa KM thành công.";
+                TempData["SuccessMessage"] = $"Đã xóa vĩnh viễn chiến dịch {promo.PromotionCode}.";
             }
             catch (InvalidOperationException ex)
             {
@@ -270,7 +334,7 @@ namespace PLPSOFT.ERP.SaaS.Web.Areas.Promotions.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+                TempData["ErrorMessage"] = $"Lỗi hệ thống khi xóa: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

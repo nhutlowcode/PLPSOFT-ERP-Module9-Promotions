@@ -97,7 +97,23 @@
                             }
                         </select>
                     </div>
-                </div>
+
+                    <div class="col-md-2">
+    <label class="form-label fw-bold">Độ ưu tiên <span class="text-danger">*</span></label>
+    <input asp-for="Priority" type="number" min="1" class="form-control" placeholder="VD: 1" value="1" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value === '0') this.value = '1';" />
+    <span asp-validation-for="Priority" class="text-danger small fw-bold"></span>
+</div>
+                    <div class="col-md-3 d-flex align-items-end pb-2">
+                        <div class="form-check form-switch fs-5 mb-0">
+                            <input class="form-check-input" type="checkbox" asp-for="IsStackable" id="IsStackable" style="cursor: pointer;">
+                            <label class="form-check-label fw-bold fs-6 mt-1" for="IsStackable" style="cursor: pointer;">Cho phép cộng dồn</label>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold">Ghi chú / Mô tả</label>
+                        <input type="text" name="Description" class="form-control" placeholder="Nhập ghi chú nội bộ chiến dịch..." />
+                    </div>
+                    </div>
             </div>
         </div>
 
@@ -276,7 +292,6 @@
                     const rows = document.getElementById(tbodyId).querySelectorAll('tr');
                     const lastRow = rows[rows.length - 1];
                     
-                    // FIX: Kích hoạt select2 cho giá trị cũ
                     $(lastRow).find('.p-id').val(p.productID).trigger('change');
                     
                     if (target !== 'applied') {
@@ -367,7 +382,6 @@
             `;
             document.getElementById(bodyId).appendChild(row);
             
-            // Kích hoạt Select2 cho dòng vừa thêm
             $(row).find('.p-id').select2({ theme: 'bootstrap-5', width: '100%' });
             
             checkEmptyMsg();
@@ -407,7 +421,6 @@
         });
 
         document.getElementById('btnSave').onclick = function() {
-            // FIX: Chặn Submit nếu lỗi Validate
             if (!$("#mainForm").valid()) {
                 return;
             }

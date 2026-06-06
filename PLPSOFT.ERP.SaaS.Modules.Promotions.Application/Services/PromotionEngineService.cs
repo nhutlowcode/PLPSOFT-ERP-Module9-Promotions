@@ -51,12 +51,9 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 
             foreach (var promo in promos.Where(p => p.PromotionType != "BOGO" && p.PromotionType != "BUY_X_GET_Y"))
             {
-                // Giả định PromotionValidator đã được triển khai tĩnh (Static) ở project của bạn
                 if (!PromotionValidator.IsPromotionActive(promo)) continue;
 
-                // --- FIX LỖI 1: Lọc Sản phẩm được áp dụng ---
-                // Nếu KM có danh sách sản phẩm (không phải hàng tặng), chỉ tính tiền các sản phẩm đó.
-                // Nếu rỗng (Count == 0), tức là áp dụng toàn sàn.
+                // Lọc Sản phẩm được áp dụng
                 var appliedProductIds = promo.Products?.Where(p => !p.IsGiftProduct).Select(p => p.ProductID).ToList() ?? new List<long>();
 
                 decimal applicableTotal = cartTotal;
@@ -93,7 +90,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
                     }
 
                     ruleMatched = true;
-                    break; // Thỏa 1 rule là ăn tiền, thoát vòng lặp
+                    break;
                 }
 
                 if (!ruleMatched || ruleDiscount <= 0) continue;
@@ -113,7 +110,12 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 
             if (nonStackablePromotions.Any())
             {
-                var bestNonStackable = nonStackablePromotions.OrderByDescending(x => x.discount).First();
+                // === ĐÃ FIX: ÁP DỤNG ĐỘ ƯU TIÊN (PRIORITY) RỒI MỚI ĐẾN TIỀN GIẢM ===
+                var bestNonStackable = nonStackablePromotions
+                    .OrderByDescending(x => x.promo.Priority)
+                    .ThenByDescending(x => x.discount)
+                    .First();
+
                 result.TotalDiscount += bestNonStackable.discount;
                 result.AppliedPromotions.Add(new AppliedPromotionDto { PromotionID = bestNonStackable.promo.PromotionID, PromotionName = bestNonStackable.promo.PromotionName, DiscountAmount = bestNonStackable.discount });
             }
@@ -136,8 +138,8 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
 
                 if (isBogoConditionMatched)
                 {
-                    // GỌI SANG HANDLER Ở ĐÂY
-                    var gifts = BuyXGetYHandler.Process(bogo, request.Items);
+                    // === ĐÃ FIX: GỌI ĐÚNG HÀM XỬ LÝ VẾ TRÁI/VẾ PHẢI BÊN DƯỚI ===
+                    var gifts = ProcessBOGO(bogo, request.Items);
 
                     if (gifts.Any())
                     {
@@ -152,7 +154,7 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.Services
             return result;
         }
 
-        // --- FIX LỖI 2: THUẬT TOÁN BOGO MỚI DỰA TRÊN VẾ TRÁI / VẾ PHẢI ---
+        // THUẬT TOÁN BOGO MỚI DỰA TRÊN VẾ TRÁI / VẾ PHẢI
         private List<CartItemDto> ProcessBOGO(PromotionDto bogo, List<CartItemDto> cartItems)
         {
             var gifts = new List<CartItemDto>();

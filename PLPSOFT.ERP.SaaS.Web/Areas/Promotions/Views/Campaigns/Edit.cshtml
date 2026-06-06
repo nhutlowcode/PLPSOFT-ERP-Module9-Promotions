@@ -66,7 +66,7 @@
                 </div>
                 <div class="col-md-9 ps-md-4">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="small fw-bold text-muted text-uppercase">Tiến độ sử dụng ngân sách</span>
+                        <span class="small fw-bold text-muted text-uppercase">Số lượt khuyến mãi đã được sử dụng</span>
                         <span class="small fw-bold text-primary">@Model.CurrentUsage / @(Model.MaxUsage ?? 0) lượt</span>
                     </div>
                     <div class="progress" style="height: 10px; border-radius: 10px;">
@@ -129,7 +129,23 @@
                             }
                         </select>
                     </div>
-                </div>
+
+                    <div class="col-md-2">
+    <label class="form-label fw-bold">Độ ưu tiên <span class="text-danger">*</span></label>
+    <input asp-for="Priority" type="number" min="1" class="form-control" disabled="@isExpired" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value === '0') this.value = '1';" />
+    <span asp-validation-for="Priority" class="text-danger small fw-bold"></span>
+</div>
+                    <div class="col-md-3 d-flex align-items-end pb-2">
+                        <div class="form-check form-switch fs-5 mb-0">
+                            <input class="form-check-input" type="checkbox" asp-for="IsStackable" id="IsStackable" disabled="@isExpired" style="cursor: pointer;">
+                            <label class="form-check-label fw-bold fs-6 mt-1" for="IsStackable" style="cursor: pointer;">Cho phép cộng dồn</label>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold">Ghi chú / Mô tả</label>
+                        <input type="text" name="Description" value="@(ViewData["Description"] ?? "")" class="form-control" placeholder="Nhập ghi chú nội bộ chiến dịch..." disabled="@isExpired" />
+                    </div>
+                    </div>
             </div>
         </div>
 
@@ -307,7 +323,6 @@
                     const tbody = document.getElementById(target === 'gift' ? 'bogo-gift-body' : (target === 'buy' ? 'bogo-buy-body' : 'applied-products-body'));
                     const row = tbody.lastElementChild;
                     
-                    // FIX: Kích hoạt select2 cho giá trị cũ
                     $(row).find('.p-id').val(p.productID).trigger('change');
                     
                     if(row.querySelector('.p-qty')) row.querySelector('.p-qty').value = p.isGiftProduct ? p.freeQuantity : p.requiredQuantity;
@@ -354,7 +369,6 @@
             `;
             document.getElementById(bodyId).appendChild(row);
             
-            // Kích hoạt Select2 cho dòng vừa thêm
             $(row).find('.p-id').select2({ theme: 'bootstrap-5', width: '100%', disabled: isReadOnly });
         }
 
@@ -397,7 +411,6 @@
         });
 
         document.getElementById('btnSave').onclick = function() {
-            // FIX: Chặn Submit nếu lỗi Validate
             if (!$("#mainForm").valid()) {
                 return;
             }

@@ -2,5 +2,6 @@
   <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Application/PLPSOFT.ERP.SaaS.Modules.Promotions.Application.csproj" />
   <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Domain/PLPSOFT.ERP.SaaS.Modules.Promotions.Domain.csproj" />
   <Project Path="PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure/PLPSOFT.ERP.SaaS.Modules.Promotions.Infrastructure.csproj" />
+  <Project Path="PLPSOFT.ERP.SaaS.Tests/PLPSOFT.ERP.SaaS.Tests.csproj" Id="7ec0e4c7-12ab-4a08-9352-e5f8660f0b0f" />
   <Project Path="PLPSOFT.ERP.SaaS.Web/PLPSOFT.ERP.SaaS.Web.csproj" />
 </Solution>

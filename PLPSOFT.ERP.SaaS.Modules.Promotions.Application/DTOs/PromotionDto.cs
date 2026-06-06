@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations; // Bổ sung thư viện này
+using System.ComponentModel.DataAnnotations; // Đã bổ sung thư viện này
 
 namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
 {
@@ -36,7 +36,12 @@ namespace PLPSOFT.ERP.SaaS.Modules.Promotions.Application.DTOs
 
         public int CurrentUsage { get; set; }
         public bool IsStackable { get; set; }
+
+        // Bổ sung Validate cho field Priority
+        [Required(ErrorMessage = "Vui lòng nhập độ ưu tiên.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Độ ưu tiên phải là số nguyên dương lớn hơn 0.")]
         public int Priority { get; set; }
+
         public string? Note { get; set; }
 
         public List<PromotionRuleDto> Rules { get; set; } = new();

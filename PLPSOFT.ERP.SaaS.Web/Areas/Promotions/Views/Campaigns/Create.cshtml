@@ -48,7 +48,7 @@
 
     <form asp-action="Create" method="post" id="mainForm">
         @Html.AntiForgeryToken()
-
+        <input type="hidden" asp-for="Status" value="ACTIVE" />
         <div class="card border-0 shadow-sm mb-4 card-info">
             <div class="card-body">
                 <h5 class="block-title"><i class="ti ti-info-circle me-2"></i>1. Thông tin chung</h5>
